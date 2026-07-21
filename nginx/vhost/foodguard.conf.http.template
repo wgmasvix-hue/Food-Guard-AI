@@ -1,0 +1,38 @@
+# Bootstrap vhost for a HOST nginx that already fronts other sites on this
+# server (added by deploy/install-vhost.sh). HTTP only, so certbot can
+# complete the HTTP-01 webroot challenge before a certificate exists.
+
+upstream foodguard_api { server 127.0.0.1:__API_PORT__; }
+upstream foodguard_web { server 127.0.0.1:__WEB_PORT__; }
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name __DOMAIN__;
+
+    client_max_body_size 25m;
+
+    location /.well-known/acme-challenge/ {
+        root __WEBROOT__;
+    }
+
+    location /api/ {
+        proxy_pass http://foodguard_api;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+    }
+
+    location / {
+        proxy_pass http://foodguard_web;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}

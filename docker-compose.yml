@@ -29,7 +29,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "127.0.0.1:8000:8000"   # loopback only; public access goes through nginx
+      - "127.0.0.1:${API_HOST_PORT:-8000}:8000"   # loopback only; public access goes through nginx
     volumes:
       - api-uploads:/data/uploads
     command: >
@@ -47,8 +47,12 @@ services:
     depends_on:
       - api
     ports:
-      - "127.0.0.1:3000:3000"   # loopback only; public access goes through nginx
+      - "127.0.0.1:${WEB_HOST_PORT:-3000}:3000"   # loopback only; public access goes through nginx
 
+  # Only used by deploy/install.sh (fresh servers with no reverse proxy of
+  # their own). On a host that already runs its own nginx/Apache in front of
+  # other sites, use deploy/install-vhost.sh instead, which adds a vhost to
+  # the existing web server and never starts this service — see docs/INSTALL.md.
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped
