@@ -54,13 +54,6 @@ else
 fi
 log "Detected nginx layout: $NGINX_LAYOUT (writing $VHOST_PATH)"
 
-# ---------- chosen loopback ports must actually be free ----------
-for port in "$API_HOST_PORT" "$WEB_HOST_PORT"; do
-  if ss -ltn "( sport = :$port )" | grep -q LISTEN; then
-    die "Port $port is already in use. Pick a free one: API_HOST_PORT=... WEB_HOST_PORT=... (re-run with different values)."
-  fi
-done
-
 # ---------- DNS check ----------
 if [[ "${SKIP_DNS_CHECK:-0}" != "1" ]]; then
   log "Checking that $DOMAIN resolves to this server..."
@@ -89,6 +82,23 @@ else
   git clone --branch "$BRANCH" "$REPO_URL" "$INSTALL_DIR"
 fi
 cd "$INSTALL_DIR"
+
+# ---------- chosen loopback ports must be free (or already ours from a prior run) ----------
+current_mapped_port() {  # $1 = service name, $2 = container port
+  docker compose port "$1" "$2" 2>/dev/null | sed -E 's/.*:([0-9]+)$/\1/'
+}
+API_CURRENT_PORT="$(current_mapped_port api 8000 || true)"
+WEB_CURRENT_PORT="$(current_mapped_port web 3000 || true)"
+
+check_port_free() {  # $1 = wanted port, $2 = port this service is already published on (if running)
+  local wanted="$1" current="$2"
+  [[ -n "$current" && "$wanted" == "$current" ]] && return 0   # already ours — fine to reuse
+  if ss -ltn "( sport = :$wanted )" | grep -q LISTEN; then
+    die "Port $wanted is already in use by something else. Pick a free one: API_HOST_PORT=... WEB_HOST_PORT=... (re-run with different values)."
+  fi
+}
+check_port_free "$API_HOST_PORT" "$API_CURRENT_PORT"
+check_port_free "$WEB_HOST_PORT" "$WEB_CURRENT_PORT"
 
 # ---------- .env ----------
 if [[ ! -f .env ]]; then
