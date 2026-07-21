@@ -107,11 +107,33 @@ alembic upgrade head
 
 Review the generated migration before committing — autogenerate is a starting point, not a guarantee.
 
-## 6. Production Notes
+## 6. Production Deployment (one server, real domain, HTTPS)
+
+`deploy/install.sh` automates a full production install on a fresh (or shared)
+Ubuntu/Debian server that already has Docker + the Compose plugin: it clones
+the repo, generates `.env` with random secrets, brings the stack up, obtains
+a Let's Encrypt certificate via the HTTP-01 webroot challenge, switches nginx
+to HTTPS, sets up daily certbot renewal, and seeds demo data.
+
+```bash
+sudo DOMAIN=foodguard.yourdomain.com EMAIL=you@yourdomain.com bash deploy/install.sh
+```
+
+Requirements before running it:
+- The domain's DNS **A record already points at the server's public IP** (the script checks this and refuses to continue if it doesn't resolve).
+- Ports **80 and 443** are free on the host (the script checks and aborts if something else is already bound — safe to run on a box hosting other apps, as long as those apps use different ports).
+- You're running it as root (or via `sudo`).
+
+It's safe to re-run: it skips secret generation if `.env` already exists, skips certificate issuance if a valid cert is already present, and the seed script no-ops if demo data already exists.
+
+The script deploys the `claude/food-guard-ai-platform-z05ynw` branch by default (override with `BRANCH=main` once you've merged it) — review the diff and merge to `main` via a PR before treating a deployment as your production baseline long-term.
+
+### Production notes (whether or not you use the script)
 
 - Set `ENVIRONMENT=production` and a strong, unique `SECRET_KEY`.
-- Terminate TLS at Nginx: mount certificates into `nginx/certs` and uncomment the HTTPS `server` block in `nginx/nginx.conf`.
+- The compose file already binds `db`, `api`, and `web` to `127.0.0.1`/internal-only — nginx (80/443) is the only public surface.
+- TLS is terminated at Nginx using `nginx/conf.d/default.conf.ssl.template`, rendered to `nginx/conf.d/default.conf` with the real domain substituted in (this file is gitignored — it's generated per-deployment, not committed).
 - Put PostgreSQL and file uploads (`/data/uploads` volume) on durable, backed-up storage.
-- Restrict `BACKEND_CORS_ORIGINS` to your real frontend domain(s).
+- Restrict `BACKEND_CORS_ORIGINS` to your real frontend domain(s) — the install script does this for you.
 - Tune `RATE_LIMIT_PER_MINUTE` / `AUTH_RATE_LIMIT_PER_MINUTE` for your traffic.
-- Run behind a process supervisor / orchestrator (Docker Swarm, Kubernetes, ECS, etc.) for zero-downtime deploys; the containers here are stateless aside from the `db`, `pgdata`, and `api-uploads` volumes.
+- Run behind a process supervisor / orchestrator (Docker Swarm, Kubernetes, ECS, etc.) for zero-downtime deploys; the containers here are stateless aside from the `db`, `pgdata`, `api-uploads`, and `certbot-etc` volumes.

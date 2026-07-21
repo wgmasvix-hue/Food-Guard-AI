@@ -1,0 +1,42 @@
+# Bootstrap config: HTTP only. Used before a TLS certificate exists, so
+# certbot can complete the HTTP-01 ACME challenge and the app is reachable
+# immediately. deploy/install.sh copies this to default.conf to start with,
+# then swaps in default.conf.ssl.template once a certificate is issued.
+
+upstream api_upstream { server api:8000; }
+upstream web_upstream { server web:3000; }
+
+server {
+    listen 80;
+    server_name __DOMAIN__;
+
+    client_max_body_size 25m;
+
+    add_header X-Frame-Options DENY always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location /api/ {
+        proxy_pass http://api_upstream;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+    }
+
+    location / {
+        proxy_pass http://web_upstream;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
