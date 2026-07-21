@@ -128,7 +128,8 @@ log "Writing bootstrap (HTTP-only) vhost..."
 sed -e "s#__DOMAIN__#${DOMAIN}#g" -e "s#__API_PORT__#${API_HOST_PORT}#g" -e "s#__WEB_PORT__#${WEB_HOST_PORT}#g" -e "s#__WEBROOT__#${WEBROOT}#g" \
   nginx/vhost/foodguard.conf.http.template > "$VHOST_PATH"
 [[ "$NGINX_LAYOUT" == "sites" ]] && ln -sf "$VHOST_PATH" "$ENABLE_PATH"
-nginx -t && systemctl reload nginx
+nginx -t || die "nginx config test failed for the vhost just written — check $VHOST_PATH"
+systemctl reload nginx
 
 # ---------- certificate ----------
 command -v certbot >/dev/null || { log "Installing certbot..."; apt-get update -qq && apt-get install -y certbot; }
@@ -145,7 +146,8 @@ fi
 log "Switching vhost to the HTTPS config..."
 sed -e "s#__DOMAIN__#${DOMAIN}#g" -e "s#__API_PORT__#${API_HOST_PORT}#g" -e "s#__WEB_PORT__#${WEB_HOST_PORT}#g" -e "s#__WEBROOT__#${WEBROOT}#g" \
   nginx/vhost/foodguard.conf.ssl.template > "$VHOST_PATH"
-nginx -t && systemctl reload nginx
+nginx -t || die "nginx config test failed for the vhost just written — check $VHOST_PATH"
+systemctl reload nginx
 
 # ---------- renewal ----------
 # Standard certbot packages already run renewal via a systemd timer/cron of
