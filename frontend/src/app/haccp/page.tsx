@@ -12,12 +12,15 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StatusBadge } from "@/components/ui/badge";
+import { CardGridSkeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { api, apiErrorMessage } from "@/lib/api-client";
+import { useToast } from "@/lib/toast-context";
 import type { HaccpPlan } from "@/lib/types";
 
 export default function HaccpPage() {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: "", scope: "", process_description: "" });
   const [error, setError] = useState<string | null>(null);
@@ -37,8 +40,11 @@ export default function HaccpPage() {
       await queryClient.invalidateQueries({ queryKey: ["haccp-plans"] });
       setOpen(false);
       setForm({ name: "", scope: "", process_description: "" });
+      toast.success("HACCP plan created.");
     } catch (err) {
-      setError(apiErrorMessage(err));
+      const message = apiErrorMessage(err);
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -54,7 +60,7 @@ export default function HaccpPage() {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-ink-500">Loading…</p>
+        <CardGridSkeleton count={3} />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {plans?.length === 0 && (

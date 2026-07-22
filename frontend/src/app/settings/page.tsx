@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StatusBadge } from "@/components/ui/badge";
+import { PasswordInput } from "@/components/ui/password-input";
 import { api, apiErrorMessage } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
 import type { Company, User } from "@/lib/types";
@@ -103,11 +104,11 @@ function ChangePasswordCard() {
         <form onSubmit={submit} className="space-y-4">
           <div>
             <Label>Current password</Label>
-            <Input type="password" required value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+            <PasswordInput required value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
           </div>
           <div>
             <Label>New password</Label>
-            <Input type="password" required minLength={8} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+            <PasswordInput required minLength={8} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
           </div>
           {message && (
             <p className={`rounded-md px-3 py-2 text-sm ${message.type === "success" ? "bg-brand-50 text-brand-800" : "bg-red-50 text-red-700"}`}>

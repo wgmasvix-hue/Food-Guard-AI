@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/badge";
+import { TableSkeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { api, apiErrorMessage, downloadFile } from "@/lib/api-client";
 import type { Audit } from "@/lib/types";
@@ -65,7 +66,7 @@ export default function AuditsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
-                {isLoading && <tr><td colSpan={5} className="py-6 text-center text-ink-400">Loading…</td></tr>}
+                {isLoading && <TableSkeleton columns={5} />}
                 {audits?.map((a) => (
                   <tr key={a.id} className="cursor-pointer hover:bg-ink-50" onClick={() => setSelected(a)}>
                     <td className="px-5 py-3 font-medium text-ink-800">{a.title}</td>

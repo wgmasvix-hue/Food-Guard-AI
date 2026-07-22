@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/ui/badge";
+import { Skeleton, TableSkeleton } from "@/components/ui/skeleton";
 import { api, apiErrorMessage } from "@/lib/api-client";
 import type { Checklist, ChecklistTemplate } from "@/lib/types";
 import { formatDateTime } from "@/lib/utils";
@@ -48,7 +49,9 @@ export default function GmpPage() {
         </CardHeader>
         <CardContent>
           {loadingTemplates ? (
-            <p className="text-sm text-ink-500">Loading…</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+            </div>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {templates?.map((t) => (
@@ -85,7 +88,7 @@ export default function GmpPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
-                {loadingChecklists && <tr><td colSpan={5} className="py-4 text-center text-ink-400">Loading…</td></tr>}
+                {loadingChecklists && <TableSkeleton columns={5} />}
                 {checklists?.map((c) => (
                   <tr key={c.id}>
                     <td className="py-2"><StatusBadge status={c.status} /></td>

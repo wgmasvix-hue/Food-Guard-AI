@@ -16,6 +16,7 @@ import Link from "next/link";
 import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
+import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api-client";
 import type { DashboardSummary } from "@/lib/types";
 import { formatDate, formatDateTime } from "@/lib/utils";
@@ -83,7 +84,7 @@ export default function DashboardPage() {
   return (
     <ProtectedShell title="Dashboard">
       {isLoading || !data ? (
-        <p className="text-sm text-ink-500">Loading dashboard…</p>
+        <DashboardSkeleton />
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">

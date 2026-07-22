@@ -10,24 +10,36 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/badge";
+import { TableSkeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { api, apiErrorMessage } from "@/lib/api-client";
+import { useToast } from "@/lib/toast-context";
 import type { CorrectiveAction } from "@/lib/types";
 import { formatDate, formatDateTime } from "@/lib/utils";
 
+const STATUS_OPTIONS = ["open", "in_progress", "pending_verification", "closed", "overdue"];
+
 export default function CorrectiveActionsPage() {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<CorrectiveAction | null>(null);
+  const [statusFilter, setStatusFilter] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     title: "", issue_description: "", root_cause: "", corrective_action: "", preventive_action: "", deadline: "",
   });
 
   const { data: cas, isLoading } = useQuery({
-    queryKey: ["corrective-actions"],
-    queryFn: async () => (await api.get<CorrectiveAction[]>("/corrective-actions")).data,
+    queryKey: ["corrective-actions", statusFilter],
+    queryFn: async () =>
+      (
+        await api.get<CorrectiveAction[]>("/corrective-actions", {
+          params: statusFilter ? { status_filter: statusFilter } : undefined,
+        })
+      ).data,
   });
 
   async function createCa(e: React.FormEvent) {
@@ -38,16 +50,25 @@ export default function CorrectiveActionsPage() {
       await queryClient.invalidateQueries({ queryKey: ["corrective-actions"] });
       setCreateOpen(false);
       setForm({ title: "", issue_description: "", root_cause: "", corrective_action: "", preventive_action: "", deadline: "" });
+      toast.success("Corrective action created.");
     } catch (err) {
-      setError(apiErrorMessage(err));
+      const message = apiErrorMessage(err);
+      setError(message);
+      toast.error(message);
     }
   }
 
   return (
     <ProtectedShell title="Corrective Actions">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-ink-500">Issue → root cause → corrective/preventive action → verification.</p>
-        <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" /> New Corrective Action</Button>
+        <div className="flex items-center gap-2">
+          <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-auto">
+            <option value="">All statuses</option>
+            {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+          </Select>
+          <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" /> New Corrective Action</Button>
+        </div>
       </div>
 
       <Card>
@@ -63,7 +84,7 @@ export default function CorrectiveActionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
-                {isLoading && <tr><td colSpan={4} className="py-6 text-center text-ink-400">Loading…</td></tr>}
+                {isLoading && <TableSkeleton columns={4} />}
                 {cas?.map((ca) => (
                   <tr key={ca.id} className="cursor-pointer hover:bg-ink-50" onClick={() => setSelected(ca)}>
                     <td className="px-5 py-3 font-medium text-ink-800">{ca.title}</td>
@@ -72,7 +93,11 @@ export default function CorrectiveActionsPage() {
                     <td className="px-5 py-3"><StatusBadge status={ca.status} /></td>
                   </tr>
                 ))}
-                {cas?.length === 0 && <tr><td colSpan={4} className="py-6 text-center text-ink-400">No corrective actions yet.</td></tr>}
+                {cas?.length === 0 && (
+                  <tr><td colSpan={4} className="py-6 text-center text-ink-400">
+                    {statusFilter ? `No corrective actions with status "${statusFilter.replace(/_/g, " ")}".` : "No corrective actions yet."}
+                  </td></tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -120,6 +145,7 @@ export default function CorrectiveActionsPage() {
 
 function CaDetailDialog({ ca, onClose }: { ca: CorrectiveAction; onClose: () => void }) {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [verificationNotes, setVerificationNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -130,8 +156,11 @@ function CaDetailDialog({ ca, onClose }: { ca: CorrectiveAction; onClose: () => 
       await api.post(`/corrective-actions/${ca.id}/verify`, { verification_notes: verificationNotes });
       await queryClient.invalidateQueries({ queryKey: ["corrective-actions"] });
       onClose();
+      toast.success("Corrective action verified and closed.");
     } catch (err) {
-      setError(apiErrorMessage(err));
+      const message = apiErrorMessage(err);
+      setError(message);
+      toast.error(message);
     }
   }
 

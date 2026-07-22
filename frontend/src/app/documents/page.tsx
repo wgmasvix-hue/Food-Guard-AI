@@ -11,8 +11,10 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { CardGridSkeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { api, apiErrorMessage } from "@/lib/api-client";
+import { useToast } from "@/lib/toast-context";
 import type { FGDocument } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 
@@ -23,14 +25,21 @@ const CATEGORIES = [
 
 export default function DocumentsPage() {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [createOpen, setCreateOpen] = useState(false);
   const [selected, setSelected] = useState<FGDocument | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ title: "", category: "sop", description: "" });
 
   const { data: documents, isLoading } = useQuery({
-    queryKey: ["documents"],
-    queryFn: async () => (await api.get<FGDocument[]>("/documents")).data,
+    queryKey: ["documents", categoryFilter],
+    queryFn: async () =>
+      (
+        await api.get<FGDocument[]>("/documents", {
+          params: categoryFilter ? { category: categoryFilter } : undefined,
+        })
+      ).data,
   });
 
   async function createDocument(e: React.FormEvent) {
@@ -41,23 +50,36 @@ export default function DocumentsPage() {
       await queryClient.invalidateQueries({ queryKey: ["documents"] });
       setCreateOpen(false);
       setForm({ title: "", category: "sop", description: "" });
+      toast.success("Document created.");
     } catch (err) {
-      setError(apiErrorMessage(err));
+      const message = apiErrorMessage(err);
+      setError(message);
+      toast.error(message);
     }
   }
 
   return (
     <ProtectedShell title="Documents">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-ink-500">SOPs, policies, certificates, specifications, and training records — with version control.</p>
-        <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" /> New Document</Button>
+        <div className="flex items-center gap-2">
+          <Select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-auto">
+            <option value="">All categories</option>
+            {CATEGORIES.map((c) => <option key={c} value={c}>{c.replace(/_/g, " ")}</option>)}
+          </Select>
+          <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" /> New Document</Button>
+        </div>
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-ink-500">Loading…</p>
+        <CardGridSkeleton count={6} />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {documents?.length === 0 && <p className="text-sm text-ink-500">No documents yet.</p>}
+          {documents?.length === 0 && (
+            <p className="text-sm text-ink-500">
+              {categoryFilter ? `No documents in "${categoryFilter.replace(/_/g, " ")}".` : "No documents yet."}
+            </p>
+          )}
           {documents?.map((doc) => (
             <button key={doc.id} onClick={() => setSelected(doc)} className="text-left">
               <Card className="h-full transition-shadow hover:shadow-md">

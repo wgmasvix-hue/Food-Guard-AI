@@ -8,6 +8,7 @@ import { useState } from "react";
 import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { api, apiErrorMessage } from "@/lib/api-client";
+import { useToast } from "@/lib/toast-context";
 import type { CCP, HaccpPlan, Hazard, MonitoringRecord } from "@/lib/types";
 import { formatDateTime } from "@/lib/utils";
 
@@ -24,6 +26,7 @@ export default function HaccpPlanDetailPage() {
   const params = useParams<{ planId: string }>();
   const planId = params.planId;
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   const { data: plan } = useQuery({
     queryKey: ["haccp-plan", planId],
@@ -41,6 +44,7 @@ export default function HaccpPlanDetailPage() {
   const [hazardOpen, setHazardOpen] = useState(false);
   const [ccpOpen, setCcpOpen] = useState(false);
   const [selectedCcp, setSelectedCcp] = useState<CCP | null>(null);
+  const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [hazardForm, setHazardForm] = useState({
@@ -56,8 +60,12 @@ export default function HaccpPlanDetailPage() {
     try {
       await api.post(`/haccp/plans/${planId}/approve`);
       await queryClient.invalidateQueries({ queryKey: ["haccp-plan", planId] });
+      setApproveConfirmOpen(false);
+      toast.success("HACCP plan approved.");
     } catch (err) {
-      setError(apiErrorMessage(err));
+      const message = apiErrorMessage(err);
+      setError(message);
+      toast.error(message);
     }
   }
 
@@ -68,8 +76,11 @@ export default function HaccpPlanDetailPage() {
       await queryClient.invalidateQueries({ queryKey: ["haccp-hazards", planId] });
       setHazardOpen(false);
       setHazardForm({ process_step: "", hazard_type: "biological", description: "", likelihood: 1, severity: 1, control_measures: "", is_ccp: false });
+      toast.success("Hazard added.");
     } catch (err) {
-      setError(apiErrorMessage(err));
+      const message = apiErrorMessage(err);
+      setError(message);
+      toast.error(message);
     }
   }
 
@@ -84,8 +95,11 @@ export default function HaccpPlanDetailPage() {
       await queryClient.invalidateQueries({ queryKey: ["haccp-ccps", planId] });
       setCcpOpen(false);
       setCcpForm({ number: "", name: "", critical_limit_min: "", critical_limit_max: "", critical_limit_unit: "", monitoring_procedure: "", monitoring_frequency: "", corrective_action_procedure: "" });
+      toast.success("Critical Control Point added.");
     } catch (err) {
-      setError(apiErrorMessage(err));
+      const message = apiErrorMessage(err);
+      setError(message);
+      toast.error(message);
     }
   }
 
@@ -98,7 +112,7 @@ export default function HaccpPlanDetailPage() {
             <span className="text-sm text-ink-500">Version {plan.version}</span>
           </div>
           {plan.status !== "approved" && (
-            <Button size="sm" variant="secondary" onClick={approvePlan}>Approve Plan</Button>
+            <Button size="sm" variant="secondary" onClick={() => setApproveConfirmOpen(true)}>Approve Plan</Button>
           )}
         </div>
       )}
@@ -255,12 +269,22 @@ export default function HaccpPlanDetailPage() {
       {selectedCcp && (
         <CcpMonitoringDialog ccp={selectedCcp} onClose={() => setSelectedCcp(null)} />
       )}
+
+      <ConfirmDialog
+        open={approveConfirmOpen}
+        onClose={() => setApproveConfirmOpen(false)}
+        onConfirm={approvePlan}
+        title="Approve this HACCP plan?"
+        description="This records you as the approver with a timestamp. The plan can still be edited afterward, but approval history is kept."
+        confirmLabel="Approve Plan"
+      />
     </ProtectedShell>
   );
 }
 
 function CcpMonitoringDialog({ ccp, onClose }: { ccp: CCP; onClose: () => void }) {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -273,11 +297,18 @@ function CcpMonitoringDialog({ ccp, onClose }: { ccp: CCP; onClose: () => void }
     e.preventDefault();
     setError(null);
     try {
-      await api.post(`/haccp/ccps/${ccp.id}/monitoring`, { measured_value: Number(value) });
+      const { data } = await api.post(`/haccp/ccps/${ccp.id}/monitoring`, { measured_value: Number(value) });
       await queryClient.invalidateQueries({ queryKey: ["ccp-monitoring", ccp.id] });
       setValue("");
+      if (data.within_limits) {
+        toast.success("Reading logged — within limits.");
+      } else {
+        toast.error("Reading is outside critical limits — a corrective action was created.");
+      }
     } catch (err) {
-      setError(apiErrorMessage(err));
+      const message = apiErrorMessage(err);
+      setError(message);
+      toast.error(message);
     }
   }
 

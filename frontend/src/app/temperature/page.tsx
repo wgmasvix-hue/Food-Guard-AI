@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/badge";
+import { CardGridSkeleton, TableSkeleton } from "@/components/ui/skeleton";
 import { api, apiErrorMessage } from "@/lib/api-client";
 import type { TemperatureLog, TemperatureUnit } from "@/lib/types";
 import { formatDateTime } from "@/lib/utils";
@@ -55,7 +56,7 @@ export default function TemperaturePage() {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-ink-500">Loading…</p>
+        <CardGridSkeleton count={3} />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {units?.length === 0 && <p className="text-sm text-ink-500">No temperature units configured yet.</p>}
@@ -163,7 +164,7 @@ function UnitLogsDialog({ unit, onClose }: { unit: TemperatureUnit; onClose: () 
             </tr>
           </thead>
           <tbody className="divide-y divide-ink-100">
-            {isLoading && <tr><td colSpan={3} className="py-4 text-center text-ink-400">Loading…</td></tr>}
+            {isLoading && <TableSkeleton columns={3} />}
             {logs?.map((log) => (
               <tr key={log.id}>
                 <td className="py-2 font-medium">{log.temperature}°C</td>

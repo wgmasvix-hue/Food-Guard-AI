@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
+import { MobileNav } from "@/components/layout/mobile-nav";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
 import { useAuth } from "@/lib/auth-context";
@@ -10,6 +11,7 @@ import { useAuth } from "@/lib/auth-context";
 export function ProtectedShell({ title, children }: { title: string; children: ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -28,9 +30,10 @@ export function ProtectedShell({ title, children }: { title: string; children: R
   return (
     <div className="flex min-h-screen bg-ink-50">
       <Sidebar />
+      <MobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar title={title} />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <Topbar title={title} onMenuClick={() => setMobileNavOpen(true)} />
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
       </div>
     </div>
   );
