@@ -1,7 +1,8 @@
-from sqlalchemy import Boolean, ForeignKey, String, Text
+from sqlalchemy import Boolean, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin
+from app.models.enums import ProductionLineStatus
 
 
 class Company(Base, UUIDMixin, TimestampMixin):
@@ -34,6 +35,9 @@ class Facility(Base, UUIDMixin, TimestampMixin):
 
     company: Mapped[Company] = relationship(back_populates="facilities")
     departments: Mapped[list["Department"]] = relationship(back_populates="facility", cascade="all, delete-orphan")
+    production_lines: Mapped[list["ProductionLine"]] = relationship(
+        back_populates="facility", cascade="all, delete-orphan"
+    )
 
 
 class Department(Base, UUIDMixin, TimestampMixin):
@@ -44,3 +48,21 @@ class Department(Base, UUIDMixin, TimestampMixin):
     description: Mapped[str | None] = mapped_column(Text)
 
     facility: Mapped[Facility] = relationship(back_populates="departments")
+
+
+class ProductionLine(Base, UUIDMixin, TimestampMixin):
+    """A physical production/packaging line within a facility."""
+
+    __tablename__ = "production_lines"
+
+    facility_id: Mapped[str] = mapped_column(ForeignKey("facilities.id", ondelete="CASCADE"), index=True)
+    department_id: Mapped[str | None] = mapped_column(ForeignKey("departments.id", ondelete="SET NULL"))
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    line_type: Mapped[str | None] = mapped_column(String(100))  # e.g. packaging, mixing, filling
+    capacity_per_hour: Mapped[float | None] = mapped_column(Float)
+    status: Mapped[ProductionLineStatus] = mapped_column(String(50), default=ProductionLineStatus.ACTIVE)
+    notes: Mapped[str | None] = mapped_column(Text)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    facility: Mapped[Facility] = relationship(back_populates="production_lines")
+    department = relationship("Department")

@@ -1,18 +1,22 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/badge";
 import { PasswordInput } from "@/components/ui/password-input";
+import { useToast } from "@/lib/toast-context";
 import { api, apiErrorMessage } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
-import type { Company, User } from "@/lib/types";
+import type { Company, Facility, ProductionLine, User } from "@/lib/types";
 import { roleLabel } from "@/lib/utils";
 
 export default function SettingsPage() {
@@ -71,7 +75,114 @@ export default function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <ProductionLinesCard />
     </ProtectedShell>
+  );
+}
+
+function ProductionLinesCard() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const [facilityId, setFacilityId] = useState<string>("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState({ name: "", line_type: "", capacity_per_hour: "" });
+
+  const { data: facilities } = useQuery({
+    queryKey: ["facilities"],
+    queryFn: async () => (await api.get<Facility[]>("/companies/facilities")).data,
+  });
+  const activeFacilityId = facilityId || facilities?.[0]?.id || "";
+
+  const { data: lines, isLoading } = useQuery({
+    queryKey: ["production-lines", activeFacilityId],
+    queryFn: async () =>
+      (await api.get<ProductionLine[]>(`/companies/facilities/${activeFacilityId}/production-lines`)).data,
+    enabled: !!activeFacilityId,
+  });
+
+  async function createLine(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    try {
+      await api.post(`/companies/facilities/${activeFacilityId}/production-lines`, {
+        ...form,
+        capacity_per_hour: form.capacity_per_hour ? Number(form.capacity_per_hour) : null,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["production-lines", activeFacilityId] });
+      setCreateOpen(false);
+      setForm({ name: "", line_type: "", capacity_per_hour: "" });
+      toast.success("Production line added.");
+    } catch (err) {
+      const message = apiErrorMessage(err);
+      setError(message);
+      toast.error(message);
+    }
+  }
+
+  if (!facilities || facilities.length === 0) return null;
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle>Production Lines</CardTitle>
+        <div className="flex items-center gap-2">
+          <Select value={activeFacilityId} onChange={(e) => setFacilityId(e.target.value)} className="w-auto">
+            {facilities.map((f) => <option key={f.id} value={f.id}>{f.name}</option>)}
+          </Select>
+          <Button size="sm" onClick={() => setCreateOpen(true)}><Plus className="h-3.5 w-3.5" /> Add Line</Button>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-ink-100 text-xs uppercase text-ink-400">
+                <th className="px-5 py-3">Name</th>
+                <th className="px-5 py-3">Type</th>
+                <th className="px-5 py-3">Capacity/hr</th>
+                <th className="px-5 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-ink-100">
+              {isLoading && <tr><td colSpan={4} className="py-6 text-center text-ink-400">Loading…</td></tr>}
+              {lines?.map((line) => (
+                <tr key={line.id}>
+                  <td className="px-5 py-3 font-medium text-ink-800">{line.name}</td>
+                  <td className="px-5 py-3 text-ink-600">{line.line_type ?? "—"}</td>
+                  <td className="px-5 py-3 text-ink-600">{line.capacity_per_hour ?? "—"}</td>
+                  <td className="px-5 py-3"><StatusBadge status={line.status} /></td>
+                </tr>
+              ))}
+              {lines?.length === 0 && <tr><td colSpan={4} className="py-6 text-center text-ink-400">No production lines yet.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+
+      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} title="Add Production Line">
+        <form onSubmit={createLine} className="space-y-4">
+          <div>
+            <Label>Name</Label>
+            <Input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Packaging Line 1" />
+          </div>
+          <div>
+            <Label>Line type</Label>
+            <Input value={form.line_type} onChange={(e) => setForm({ ...form, line_type: e.target.value })} placeholder="e.g. packaging, mixing, filling" />
+          </div>
+          <div>
+            <Label>Capacity per hour</Label>
+            <Input type="number" step="any" value={form.capacity_per_hour} onChange={(e) => setForm({ ...form, capacity_per_hour: e.target.value })} />
+          </div>
+          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
+            <Button type="submit">Add Line</Button>
+          </div>
+        </form>
+      </Dialog>
+    </Card>
   );
 }
 

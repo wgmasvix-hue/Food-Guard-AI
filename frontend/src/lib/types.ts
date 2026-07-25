@@ -39,6 +39,91 @@ export interface Facility {
   is_active: boolean;
 }
 
+export interface ProductionLine {
+  id: string;
+  facility_id: string;
+  department_id?: string | null;
+  name: string;
+  line_type?: string | null;
+  capacity_per_hour?: number | null;
+  status: "active" | "stopped" | "maintenance";
+  notes?: string | null;
+  is_active: boolean;
+}
+
+export type SignatureMeaning = "audit_completion" | "haccp_plan_approval" | "corrective_action_verification";
+
+export interface DigitalSignature {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  meaning: SignatureMeaning;
+  signed_by_id: string;
+  typed_name: string;
+  ip_address?: string | null;
+  signed_at: string;
+  notes?: string | null;
+}
+
+export interface AuditTemplateItem {
+  id: string;
+  order: number;
+  clause?: string | null;
+  question: string;
+  guidance?: string | null;
+  is_critical: boolean;
+}
+
+export interface AuditTemplate {
+  id: string;
+  company_id?: string | null;
+  name: string;
+  standard?: string | null;
+  description?: string | null;
+  is_active: boolean;
+  items: AuditTemplateItem[];
+}
+
+export interface AuditChecklistItem {
+  id: string;
+  audit_id: string;
+  template_item_id?: string | null;
+  clause?: string | null;
+  question: string;
+  is_critical: boolean;
+  result?: string | null;
+  comment?: string | null;
+  corrective_action_id?: string | null;
+}
+
+export type RiskLevel = "low" | "medium" | "high" | "critical";
+
+export interface AuditAIAnalysis {
+  id: string;
+  audit_id: string;
+  generated_by_id?: string | null;
+  summary: string;
+  risk_level: RiskLevel;
+  root_cause_analysis?: string | null;
+  recommended_corrective_actions?: string | null;
+  improvement_plan?: string | null;
+  model?: string | null;
+  generated_at: string;
+}
+
+export interface Attachment {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  uploaded_by_id?: string | null;
+  file_path: string;
+  file_name?: string | null;
+  content_type?: string | null;
+  size_bytes?: number | null;
+  caption?: string | null;
+  created_at: string;
+}
+
 export interface HaccpPlan {
   id: string;
   company_id: string;
@@ -190,6 +275,7 @@ export interface Audit {
   audit_type: string;
   standard?: string | null;
   scope?: string | null;
+  template_id?: string | null;
   scheduled_date?: string | null;
   completed_date?: string | null;
   status: string;
@@ -197,6 +283,7 @@ export interface Audit {
   summary?: string | null;
   external_auditor?: string | null;
   findings: AuditFinding[];
+  checklist_items: AuditChecklistItem[];
 }
 
 export interface DocumentVersion {

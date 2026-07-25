@@ -73,3 +73,21 @@ QA_SYSTEM_PROMPT = (
 
 def get_document_system_prompt(document_type: str) -> str:
     return DOCUMENT_PROMPTS.get(document_type, BASE_SYSTEM_PROMPT)
+
+
+AUDIT_ANALYSIS_SYSTEM_PROMPT = (
+    BASE_SYSTEM_PROMPT
+    + " You will be given a completed audit's details and its findings. Analyze them and "
+    "respond using EXACTLY these five Markdown headings, in this order, each followed by "
+    "its content (no other headings, no preamble before the first heading):\n\n"
+    "## Summary\n"
+    "## Risk Level\n"
+    "## Root Cause Analysis\n"
+    "## Recommended Corrective Actions\n"
+    "## Improvement Plan\n\n"
+    "Under 'Risk Level', respond with exactly one word: Low, Medium, High, or Critical, "
+    "optionally followed by a one-sentence justification. Base the level on the number and "
+    "severity of findings (critical/major findings should drive Medium-High-Critical). "
+    "Under 'Recommended Corrective Actions', give a numbered list. Under 'Improvement Plan', "
+    "give a short numbered list of systemic/preventive changes, not just per-finding fixes."
+)

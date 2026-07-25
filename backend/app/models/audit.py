@@ -13,6 +13,7 @@ class Audit(Base, UUIDMixin, TimestampMixin):
     company_id: Mapped[str] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), index=True)
     facility_id: Mapped[str | None] = mapped_column(ForeignKey("facilities.id", ondelete="SET NULL"))
     lead_auditor_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    template_id: Mapped[str | None] = mapped_column(ForeignKey("audit_templates.id", ondelete="SET NULL"))
 
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     audit_type: Mapped[AuditType] = mapped_column(String(50), nullable=False)
@@ -26,7 +27,14 @@ class Audit(Base, UUIDMixin, TimestampMixin):
     external_auditor: Mapped[str | None] = mapped_column(String(255))  # body/person for external audits
 
     lead_auditor = relationship("User")
+    template = relationship("AuditTemplate")
     findings: Mapped[list["AuditFinding"]] = relationship(back_populates="audit", cascade="all, delete-orphan")
+    checklist_items: Mapped[list["AuditChecklistItem"]] = relationship(
+        back_populates="audit", cascade="all, delete-orphan"
+    )
+    ai_analyses: Mapped[list["AuditAIAnalysis"]] = relationship(
+        back_populates="audit", cascade="all, delete-orphan", order_by="AuditAIAnalysis.generated_at.desc()"
+    )
 
 
 class AuditFinding(Base, UUIDMixin, TimestampMixin):

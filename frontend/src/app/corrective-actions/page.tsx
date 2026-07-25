@@ -11,6 +11,7 @@ import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { SignatureDialog } from "@/components/ui/signature-dialog";
 import { StatusBadge } from "@/components/ui/badge";
 import { TableSkeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
@@ -147,14 +148,18 @@ function CaDetailDialog({ ca, onClose }: { ca: CorrectiveAction; onClose: () => 
   const queryClient = useQueryClient();
   const toast = useToast();
   const [verificationNotes, setVerificationNotes] = useState("");
+  const [signOpen, setSignOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function verify(e: React.FormEvent) {
-    e.preventDefault();
+  async function verify(typedName: string) {
     setError(null);
     try {
-      await api.post(`/corrective-actions/${ca.id}/verify`, { verification_notes: verificationNotes });
+      await api.post(`/corrective-actions/${ca.id}/verify`, {
+        verification_notes: verificationNotes,
+        typed_name: typedName,
+      });
       await queryClient.invalidateQueries({ queryKey: ["corrective-actions"] });
+      setSignOpen(false);
       onClose();
       toast.success("Corrective action verified and closed.");
     } catch (err) {
@@ -180,15 +185,25 @@ function CaDetailDialog({ ca, onClose }: { ca: CorrectiveAction; onClose: () => 
       </div>
 
       {ca.status !== "closed" && (
-        <form onSubmit={verify} className="mt-5 space-y-3 border-t border-ink-100 pt-4">
+        <div className="mt-5 space-y-3 border-t border-ink-100 pt-4">
           <Label>Verification notes</Label>
           <Textarea required value={verificationNotes} onChange={(e) => setVerificationNotes(e.target.value)} placeholder="Describe how the corrective action was verified as effective" />
-          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
           <div className="flex justify-end">
-            <Button type="submit">Verify &amp; Close</Button>
+            <Button type="button" disabled={!verificationNotes.trim()} onClick={() => setSignOpen(true)}>
+              Verify &amp; Close
+            </Button>
           </div>
-        </form>
+        </div>
       )}
+
+      <SignatureDialog
+        open={signOpen}
+        onClose={() => setSignOpen(false)}
+        onSign={verify}
+        meaning="corrective_action_verification"
+        title="Verify Corrective Action"
+        error={error}
+      />
     </Dialog>
   );
 }

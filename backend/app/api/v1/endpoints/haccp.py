@@ -1,12 +1,12 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_active_user, get_db
 from app.core.rbac import require_min_role
 from app.models.corrective_action import CorrectiveAction
-from app.models.enums import CAStatus, UserRole
+from app.models.enums import CAStatus, SignatureMeaning, UserRole
 from app.models.haccp import CCP, HaccpPlan, HaccpReview, Hazard, MonitoringRecord
 from app.models.user import User
 from app.schemas.haccp import (
@@ -23,6 +23,8 @@ from app.schemas.haccp import (
     MonitoringRecordCreate,
     MonitoringRecordRead,
 )
+from app.schemas.signature import SignatureCreate
+from app.services.signing import sign
 
 router = APIRouter()
 
@@ -84,10 +86,21 @@ def update_plan(
 @router.post("/plans/{plan_id}/approve", response_model=HaccpPlanRead)
 def approve_plan(
     plan_id: str,
+    payload: SignatureCreate,
+    request: Request,
     current_user: User = Depends(require_min_role(UserRole.QA_MANAGER)),
     db: Session = Depends(get_db),
 ):
     plan = _get_plan_or_404(db, plan_id, current_user.company_id)
+    if payload.meaning != SignatureMeaning.HACCP_PLAN_APPROVAL:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Wrong signature meaning for this action")
+
+    content = f"haccp_plan:{plan.id}:version={plan.version}:approved_by={current_user.id}"
+    sign(
+        db, request=request, current_user=current_user, payload=payload,
+        entity_type="haccp_plan", entity_id=plan.id, content_to_hash=content,
+    )
+
     plan.status = "approved"
     plan.approved_by_id = current_user.id
     plan.approved_at = datetime.now(timezone.utc)

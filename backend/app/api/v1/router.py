@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
     ai,
+    attachments,
     audits,
     auth,
     companies,
@@ -13,6 +14,7 @@ from app.api.v1.endpoints import (
     notifications,
     products,
     reports,
+    signatures,
     temperature,
     users,
 )
@@ -32,3 +34,5 @@ api_router.include_router(products.router, prefix="/products", tags=["Products &
 api_router.include_router(ai.router, prefix="/ai", tags=["AI Assistant"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
 api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
+api_router.include_router(signatures.router, prefix="/signatures", tags=["Digital Signatures"])
+api_router.include_router(attachments.router, prefix="/attachments", tags=["Attachments"])

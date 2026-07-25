@@ -1,13 +1,20 @@
+import tempfile
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.core.config import settings
+from app.core.rate_limit import limiter
 from app.db.base import Base
 from app.db.session import get_db
 from app.main import app
 from app.models import *  # noqa: F401,F403  register all models on Base.metadata
+
+# Keep test file uploads out of the real UPLOAD_DIR.
+settings.UPLOAD_DIR = tempfile.mkdtemp(prefix="fg-test-uploads-")
 
 engine = create_engine(
     "sqlite:///:memory:",
@@ -20,6 +27,7 @@ TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commi
 @pytest.fixture(autouse=True)
 def _fresh_db():
     Base.metadata.create_all(bind=engine)
+    limiter.reset()
     yield
     Base.metadata.drop_all(bind=engine)
 

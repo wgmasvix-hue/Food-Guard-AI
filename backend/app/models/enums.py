@@ -94,3 +94,30 @@ class NotificationLevel(StrEnum):
     INFO = "info"
     WARNING = "warning"
     CRITICAL = "critical"
+
+
+class ProductionLineStatus(StrEnum):
+    ACTIVE = "active"
+    STOPPED = "stopped"
+    MAINTENANCE = "maintenance"
+
+
+class SignatureMeaning(StrEnum):
+    """What the signer is attesting to — shown back to them at signing time."""
+
+    AUDIT_COMPLETION = "audit_completion"
+    HACCP_PLAN_APPROVAL = "haccp_plan_approval"
+    CORRECTIVE_ACTION_VERIFICATION = "corrective_action_verification"
+
+
+class AuditChecklistItemResult(StrEnum):
+    PASS = "pass"
+    FAIL = "fail"
+    NA = "na"
+
+
+class RiskLevel(StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"

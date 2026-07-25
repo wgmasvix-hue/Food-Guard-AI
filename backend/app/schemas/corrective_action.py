@@ -33,6 +33,7 @@ class CorrectiveActionUpdate(BaseModel):
 
 class CorrectiveActionVerify(BaseModel):
     verification_notes: str
+    typed_name: str
 
 
 class CorrectiveActionRead(TimestampedORMModel):

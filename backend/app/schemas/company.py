@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+from app.models.enums import ProductionLineStatus
 from app.schemas.common import TimestampedORMModel
 
 
@@ -92,4 +93,33 @@ class EmployeeRead(TimestampedORMModel):
     email: str | None = None
     phone: str | None = None
     food_safety_trained: bool
+    is_active: bool
+
+
+class ProductionLineCreate(BaseModel):
+    department_id: str | None = None
+    name: str
+    line_type: str | None = None
+    capacity_per_hour: float | None = None
+    notes: str | None = None
+
+
+class ProductionLineUpdate(BaseModel):
+    department_id: str | None = None
+    name: str | None = None
+    line_type: str | None = None
+    capacity_per_hour: float | None = None
+    status: ProductionLineStatus | None = None
+    notes: str | None = None
+    is_active: bool | None = None
+
+
+class ProductionLineRead(TimestampedORMModel):
+    facility_id: str
+    department_id: str | None = None
+    name: str
+    line_type: str | None = None
+    capacity_per_hour: float | None = None
+    status: ProductionLineStatus
+    notes: str | None = None
     is_active: bool

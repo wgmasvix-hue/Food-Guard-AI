@@ -8,11 +8,11 @@ import { useState } from "react";
 import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { SignatureDialog } from "@/components/ui/signature-dialog";
 import { StatusBadge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { api, apiErrorMessage } from "@/lib/api-client";
@@ -44,7 +44,8 @@ export default function HaccpPlanDetailPage() {
   const [hazardOpen, setHazardOpen] = useState(false);
   const [ccpOpen, setCcpOpen] = useState(false);
   const [selectedCcp, setSelectedCcp] = useState<CCP | null>(null);
-  const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
+  const [approveSignOpen, setApproveSignOpen] = useState(false);
+  const [approveError, setApproveError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [hazardForm, setHazardForm] = useState({
@@ -56,15 +57,21 @@ export default function HaccpPlanDetailPage() {
     monitoring_procedure: "", monitoring_frequency: "", corrective_action_procedure: "",
   });
 
-  async function approvePlan() {
+  async function approvePlan(typedName: string) {
+    setApproveError(null);
     try {
-      await api.post(`/haccp/plans/${planId}/approve`);
+      await api.post(`/haccp/plans/${planId}/approve`, {
+        entity_type: "haccp_plan",
+        entity_id: planId,
+        meaning: "haccp_plan_approval",
+        typed_name: typedName,
+      });
       await queryClient.invalidateQueries({ queryKey: ["haccp-plan", planId] });
-      setApproveConfirmOpen(false);
-      toast.success("HACCP plan approved.");
+      setApproveSignOpen(false);
+      toast.success("HACCP plan approved and signed.");
     } catch (err) {
       const message = apiErrorMessage(err);
-      setError(message);
+      setApproveError(message);
       toast.error(message);
     }
   }
@@ -112,7 +119,7 @@ export default function HaccpPlanDetailPage() {
             <span className="text-sm text-ink-500">Version {plan.version}</span>
           </div>
           {plan.status !== "approved" && (
-            <Button size="sm" variant="secondary" onClick={() => setApproveConfirmOpen(true)}>Approve Plan</Button>
+            <Button size="sm" variant="secondary" onClick={() => setApproveSignOpen(true)}>Approve Plan</Button>
           )}
         </div>
       )}
@@ -270,13 +277,13 @@ export default function HaccpPlanDetailPage() {
         <CcpMonitoringDialog ccp={selectedCcp} onClose={() => setSelectedCcp(null)} />
       )}
 
-      <ConfirmDialog
-        open={approveConfirmOpen}
-        onClose={() => setApproveConfirmOpen(false)}
-        onConfirm={approvePlan}
-        title="Approve this HACCP plan?"
-        description="This records you as the approver with a timestamp. The plan can still be edited afterward, but approval history is kept."
-        confirmLabel="Approve Plan"
+      <SignatureDialog
+        open={approveSignOpen}
+        onClose={() => setApproveSignOpen(false)}
+        onSign={approvePlan}
+        meaning="haccp_plan_approval"
+        title="Approve HACCP Plan"
+        error={approveError}
       />
     </ProtectedShell>
   );

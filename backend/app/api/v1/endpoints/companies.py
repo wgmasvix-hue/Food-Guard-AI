@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_active_user, get_db
 from app.core.rbac import require_min_role, require_roles
-from app.models.company import Company, Department, Facility
+from app.models.company import Company, Department, Facility, ProductionLine
 from app.models.employee import Employee
 from app.models.enums import UserRole
 from app.models.user import User
@@ -18,6 +18,9 @@ from app.schemas.company import (
     FacilityCreate,
     FacilityRead,
     FacilityUpdate,
+    ProductionLineCreate,
+    ProductionLineRead,
+    ProductionLineUpdate,
 )
 
 router = APIRouter()
@@ -171,3 +174,58 @@ def create_employee(
     db.commit()
     db.refresh(employee)
     return employee
+
+
+# --- Production Lines ---
+
+@router.get("/facilities/{facility_id}/production-lines", response_model=list[ProductionLineRead])
+def list_production_lines(
+    facility_id: str, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)
+):
+    facility = db.get(Facility, facility_id)
+    if not facility or facility.company_id != _scoped_company_id(current_user):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Facility not found")
+    return (
+        db.query(ProductionLine)
+        .filter(ProductionLine.facility_id == facility_id)
+        .order_by(ProductionLine.name)
+        .all()
+    )
+
+
+@router.post(
+    "/facilities/{facility_id}/production-lines",
+    response_model=ProductionLineRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_production_line(
+    facility_id: str,
+    payload: ProductionLineCreate,
+    current_user: User = Depends(require_min_role(UserRole.PRODUCTION_SUPERVISOR)),
+    db: Session = Depends(get_db),
+):
+    facility = db.get(Facility, facility_id)
+    if not facility or facility.company_id != _scoped_company_id(current_user):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Facility not found")
+    line = ProductionLine(facility_id=facility_id, **payload.model_dump())
+    db.add(line)
+    db.commit()
+    db.refresh(line)
+    return line
+
+
+@router.patch("/production-lines/{line_id}", response_model=ProductionLineRead)
+def update_production_line(
+    line_id: str,
+    payload: ProductionLineUpdate,
+    current_user: User = Depends(require_min_role(UserRole.PRODUCTION_SUPERVISOR)),
+    db: Session = Depends(get_db),
+):
+    line = db.get(ProductionLine, line_id)
+    if not line or line.facility.company_id != _scoped_company_id(current_user):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Production line not found")
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(line, field, value)
+    db.commit()
+    db.refresh(line)
+    return line
