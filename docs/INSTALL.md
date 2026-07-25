@@ -109,16 +109,19 @@ Review the generated migration before committing — autogenerate is a starting 
 
 ## 6. Production Deployment (one server, real domain, HTTPS)
 
-There are three installer scripts under `deploy/`, depending on what already
-owns ports 80/443 on the target server. All three: clone/update the repo,
+There are four installer scripts under `deploy/`, depending on what already
+owns ports 80/443 on the target server. All four: clone/update the repo,
 generate `.env` with random secrets, build and start `db`/`api`/`web`, and
 seed demo data. They differ only in how HTTPS gets terminated.
 
 | Script | Use when... |
 |---|---|
 | `deploy/install.sh` | Nothing else is on ports 80/443 — it runs its own nginx container and gets a cert via certbot. |
-| `deploy/install-vhost.sh` | The server already runs its **own nginx** in front of other sites — it adds a vhost to that nginx and gets its own cert via certbot (with a deploy-hook so renewals reload nginx without disturbing other sites' renewal setup). |
-| `deploy/install-caddy.sh` | The server already runs **Caddy** in front of other sites — it adds a site block to the existing Caddyfile (or a sites-import directory if the Caddyfile uses one). Caddy obtains its own certificate automatically on first request — no certbot step at all. |
+| `deploy/install-vhost.sh` | The server already runs its **own host-installed nginx** in front of other sites — it adds a vhost to that nginx and gets its own cert via certbot (with a deploy-hook so renewals reload nginx without disturbing other sites' renewal setup). |
+| `deploy/install-caddy.sh` | The server already runs a **host-installed Caddy** (a systemd service, `caddy` binary on PATH) in front of other sites — it adds a site block to the existing Caddyfile. Caddy obtains its own certificate automatically — no certbot step at all. |
+| `deploy/install-caddy-docker.sh` | Caddy itself runs **inside a Docker container** (e.g. tooling like ChengetAi Deploy that runs `caddy:2.x` as a container) reaching other containers by name on a shared Docker network rather than via the host's `127.0.0.1`. Attaches `api`/`web` to that same network (via `docker-compose.caddy-network.yml`) and points Caddy at them by container name — the same way it already reaches e.g. `dspace:8080`. |
+
+Telling the host-Caddy and containerized-Caddy cases apart: `systemctl status caddy` finding a real service means host-installed (`install-caddy.sh`); `docker ps` showing a `caddy` image with 80/443 published means containerized (`install-caddy-docker.sh`). If nginx *fails to start* with "Address already in use", something else (check `ss -ltnp | grep -E ':80 |:443 '`) already holds those ports — don't assume it's nginx's config that's broken.
 
 ### Fresh server (dockerized nginx)
 
@@ -146,11 +149,28 @@ sudo DOMAIN=foodguard.yourdomain.com \
 
 No `EMAIL` needed — Caddy's automatic HTTPS doesn't require one up front (though its own config may set one globally for ACME notices).
 
-Requirements for all three:
+### Shared server running Caddy in Docker
+
+```bash
+sudo DOMAIN=foodguard.yourdomain.com \
+  CADDY_CONTAINER=chengetai-caddy \
+  CADDY_NETWORK=chengetai-dare_dspacenet \
+  CADDYFILE_HOST_PATH=/opt/chengetai-deploy/deployments/dare/engine/caddy/Caddyfile \
+  bash deploy/install-caddy-docker.sh
+```
+
+Find those three values first:
+```bash
+docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Ports}}'         # CADDY_CONTAINER: the caddy:2.x one
+docker inspect <container> --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}}{{"\n"}}{{end}}'   # CADDY_NETWORK
+docker inspect <container> --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}'      # CADDYFILE_HOST_PATH (the one mounted to /etc/caddy/Caddyfile)
+```
+
+Requirements for all four:
 - The domain's DNS **A record already points at the server's public IP** (each script checks this and refuses to continue if it doesn't resolve; set `SKIP_DNS_CHECK=1` to bypass).
 - You're running as root (or via `sudo`).
 
-All three are safe to re-run: they skip secret generation if `.env` already exists, skip certificate issuance if a valid cert is already present (or no-op for Caddy if the site block already exists), and the seed script no-ops if demo data already exists.
+All four are safe to re-run: they skip secret generation if `.env` already exists, skip certificate issuance if a valid cert is already present (or no-op for Caddy if the site block already exists), and the seed script no-ops if demo data already exists.
 
 Each script deploys the `claude/food-guard-ai-platform-z05ynw` branch by default (override with `BRANCH=main` once you've merged it) — review the diff and merge to `main` via a PR before treating a deployment as your production baseline long-term.
 

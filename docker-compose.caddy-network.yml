@@ -1,0 +1,25 @@
+# Override for deploy/install-caddy-docker.sh: attaches api/web to an
+# existing external Docker network so a Caddy container already running on
+# that network (e.g. chengetai-caddy) can reverse_proxy to them by
+# container name — the same way it already reaches e.g. "dspace:8080".
+#
+# Usage:
+#   CADDY_NETWORK=chengetai-dare_dspacenet docker compose \
+#     -f docker-compose.yml -f docker-compose.caddy-network.yml up -d --build db api web
+services:
+  api:
+    container_name: food-guard-ai-api
+    networks:
+      - default
+      - proxy_net
+
+  web:
+    container_name: food-guard-ai-web
+    networks:
+      - default
+      - proxy_net
+
+networks:
+  proxy_net:
+    name: ${CADDY_NETWORK:?Set CADDY_NETWORK to the Docker network your Caddy container is attached to}
+    external: true
