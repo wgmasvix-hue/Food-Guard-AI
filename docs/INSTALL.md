@@ -109,31 +109,56 @@ Review the generated migration before committing — autogenerate is a starting 
 
 ## 6. Production Deployment (one server, real domain, HTTPS)
 
-`deploy/install.sh` automates a full production install on a fresh (or shared)
-Ubuntu/Debian server that already has Docker + the Compose plugin: it clones
-the repo, generates `.env` with random secrets, brings the stack up, obtains
-a Let's Encrypt certificate via the HTTP-01 webroot challenge, switches nginx
-to HTTPS, sets up daily certbot renewal, and seeds demo data.
+There are three installer scripts under `deploy/`, depending on what already
+owns ports 80/443 on the target server. All three: clone/update the repo,
+generate `.env` with random secrets, build and start `db`/`api`/`web`, and
+seed demo data. They differ only in how HTTPS gets terminated.
+
+| Script | Use when... |
+|---|---|
+| `deploy/install.sh` | Nothing else is on ports 80/443 — it runs its own nginx container and gets a cert via certbot. |
+| `deploy/install-vhost.sh` | The server already runs its **own nginx** in front of other sites — it adds a vhost to that nginx and gets its own cert via certbot (with a deploy-hook so renewals reload nginx without disturbing other sites' renewal setup). |
+| `deploy/install-caddy.sh` | The server already runs **Caddy** in front of other sites — it adds a site block to the existing Caddyfile (or a sites-import directory if the Caddyfile uses one). Caddy obtains its own certificate automatically on first request — no certbot step at all. |
+
+### Fresh server (dockerized nginx)
 
 ```bash
 sudo DOMAIN=foodguard.yourdomain.com EMAIL=you@yourdomain.com bash deploy/install.sh
 ```
 
-Requirements before running it:
-- The domain's DNS **A record already points at the server's public IP** (the script checks this and refuses to continue if it doesn't resolve).
-- Ports **80 and 443** are free on the host (the script checks and aborts if something else is already bound — safe to run on a box hosting other apps, as long as those apps use different ports).
-- You're running it as root (or via `sudo`).
+### Shared server already running nginx
 
-It's safe to re-run: it skips secret generation if `.env` already exists, skips certificate issuance if a valid cert is already present, and the seed script no-ops if demo data already exists.
+```bash
+sudo DOMAIN=foodguard.yourdomain.com EMAIL=you@yourdomain.com \
+  API_HOST_PORT=8001 WEB_HOST_PORT=3001 \
+  bash deploy/install-vhost.sh
+```
 
-The script deploys the `claude/food-guard-ai-platform-z05ynw` branch by default (override with `BRANCH=main` once you've merged it) — review the diff and merge to `main` via a PR before treating a deployment as your production baseline long-term.
+`API_HOST_PORT`/`WEB_HOST_PORT` (loopback-only) default to 8000/3000 — override them if something else on the box already holds those.
 
-### Production notes (whether or not you use the script)
+### Shared server already running Caddy
+
+```bash
+sudo DOMAIN=foodguard.yourdomain.com \
+  API_HOST_PORT=8001 WEB_HOST_PORT=3001 \
+  bash deploy/install-caddy.sh
+```
+
+No `EMAIL` needed — Caddy's automatic HTTPS doesn't require one up front (though its own config may set one globally for ACME notices).
+
+Requirements for all three:
+- The domain's DNS **A record already points at the server's public IP** (each script checks this and refuses to continue if it doesn't resolve; set `SKIP_DNS_CHECK=1` to bypass).
+- You're running as root (or via `sudo`).
+
+All three are safe to re-run: they skip secret generation if `.env` already exists, skip certificate issuance if a valid cert is already present (or no-op for Caddy if the site block already exists), and the seed script no-ops if demo data already exists.
+
+Each script deploys the `claude/food-guard-ai-platform-z05ynw` branch by default (override with `BRANCH=main` once you've merged it) — review the diff and merge to `main` via a PR before treating a deployment as your production baseline long-term.
+
+### Production notes (whether or not you use a script)
 
 - Set `ENVIRONMENT=production` and a strong, unique `SECRET_KEY`.
-- The compose file already binds `db`, `api`, and `web` to `127.0.0.1`/internal-only — nginx (80/443) is the only public surface.
-- TLS is terminated at Nginx using `nginx/conf.d/default.conf.ssl.template`, rendered to `nginx/conf.d/default.conf` with the real domain substituted in (this file is gitignored — it's generated per-deployment, not committed).
+- The compose file binds `db`, `api`, and `web` to `127.0.0.1`/internal-only by default; `API_HOST_PORT`/`WEB_HOST_PORT` control which loopback ports `api`/`web` publish to, so a reverse proxy on the same host can reach them without any port being exposed publicly except the proxy itself.
 - Put PostgreSQL and file uploads (`/data/uploads` volume) on durable, backed-up storage.
-- Restrict `BACKEND_CORS_ORIGINS` to your real frontend domain(s) — the install script does this for you.
+- Restrict `BACKEND_CORS_ORIGINS` to your real frontend domain(s) — the install scripts do this for you.
 - Tune `RATE_LIMIT_PER_MINUTE` / `AUTH_RATE_LIMIT_PER_MINUTE` for your traffic.
-- Run behind a process supervisor / orchestrator (Docker Swarm, Kubernetes, ECS, etc.) for zero-downtime deploys; the containers here are stateless aside from the `db`, `pgdata`, `api-uploads`, and `certbot-etc` volumes.
+- Run behind a process supervisor / orchestrator (Docker Swarm, Kubernetes, ECS, etc.) for zero-downtime deploys; the containers here are stateless aside from the `db`, `pgdata`, `api-uploads`, and (nginx-path only) `certbot-etc` volumes.
