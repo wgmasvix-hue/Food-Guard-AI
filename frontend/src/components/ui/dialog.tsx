@@ -29,10 +29,10 @@ export function Dialog({ open, onClose, title, description, children, className 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink-900/50 p-4 pt-16 animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-16 animate-fade-in">
       <div
         className={cn(
-          "w-full max-w-lg rounded-xl bg-white shadow-xl animate-fade-in",
+          "w-full max-w-lg rounded-xl bg-surface shadow-xl animate-fade-in",
           className
         )}
       >

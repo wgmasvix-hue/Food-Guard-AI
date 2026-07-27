@@ -11,7 +11,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-r border-ink-200 bg-white md:flex">
+    <aside className="hidden w-64 shrink-0 flex-col border-r border-ink-200 bg-surface md:flex">
       <div className="px-5 py-5">
         <BrandMark />
       </div>
@@ -34,7 +34,10 @@ export function Sidebar() {
           );
         })}
       </nav>
-      <div className="px-5 py-4 text-xs text-ink-400">© {new Date().getFullYear()} Food Guard AI</div>
+      <div className="space-y-0.5 px-5 py-4 text-xs text-ink-400">
+        <p>© {new Date().getFullYear()} Food Guard AI</p>
+        <p>Powered by ChengetAi Labs</p>
+      </div>
     </aside>
   );
 }
