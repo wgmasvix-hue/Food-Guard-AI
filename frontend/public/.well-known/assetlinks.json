@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ai.foodguard.twa",
+      "sha256_cert_fingerprints": [
+        "2E:D1:79:C1:CB:1A:A1:48:5E:44:84:21:26:C9:65:C9:9A:BB:76:63:90:B9:D4:A8:E6:0F:D9:9F:C7:47:8D:29"
+      ]
+    }
+  }
+]
