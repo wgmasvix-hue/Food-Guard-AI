@@ -1,6 +1,8 @@
+import { Smartphone } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { BrandMark } from "@/components/brand-mark";
+import { ANDROID_APK_DOWNLOAD_URL } from "@/lib/constants";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
@@ -11,6 +13,13 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         </div>
         {children}
       </div>
+      <a
+        href={ANDROID_APK_DOWNLOAD_URL}
+        className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white"
+      >
+        <Smartphone className="h-3.5 w-3.5" />
+        Download Android App
+      </a>
       <p className="text-xs text-slate-400">Powered by ChengetAi Labs</p>
     </div>
   );

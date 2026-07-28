@@ -17,7 +17,17 @@ rather than being built locally by an agent.
 
 Trigger it from the Actions tab ("Build Android APK" → Run workflow) or
 push a change under `android/`. The signed `.apk` is uploaded as a
-workflow run artifact.
+workflow run artifact, and — as long as the repository secrets below are
+set — also published to a GitHub Release. That gives a stable public
+download link that always serves the most recent successful build,
+without needing a GitHub login (unlike workflow artifacts):
+
+```
+https://github.com/wgmasvix-hue/Food-Guard-AI/releases/latest/download/FoodGuardAI.apk
+```
+
+This is the link the web app's "Download Android App" footer button
+points to.
 
 ## Required repository secrets
 

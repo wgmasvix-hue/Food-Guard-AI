@@ -1,8 +1,14 @@
 """Application settings loaded from environment variables (.env supported)."""
 from functools import lru_cache
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+INSECURE_DEFAULT_SECRET_KEY = "dev-secret-key-change-me"
+KNOWN_PLACEHOLDER_SECRET_KEYS = {
+    INSECURE_DEFAULT_SECRET_KEY,
+    "change-me-to-a-long-random-string",
+}
 
 
 class Settings(BaseSettings):
@@ -12,7 +18,7 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     ENVIRONMENT: str = "development"
 
-    SECRET_KEY: str = "dev-secret-key-change-me"
+    SECRET_KEY: str = INSECURE_DEFAULT_SECRET_KEY
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -45,6 +51,19 @@ class Settings(BaseSettings):
         if isinstance(v, str) and not v.startswith("["):
             return [o.strip() for o in v.split(",") if o.strip()]
         return v
+
+    @model_validator(mode="after")
+    def _refuse_insecure_production_secret(self):
+        if self.ENVIRONMENT == "production" and self.SECRET_KEY == INSECURE_DEFAULT_SECRET_KEY:
+            raise RuntimeError(
+                "SECRET_KEY is still set to the insecure default while ENVIRONMENT=production. "
+                "Set a unique SECRET_KEY (e.g. `openssl rand -hex 32`) in your .env before starting."
+            )
+        return self
+
+    @property
+    def is_production(self) -> bool:
+        return self.ENVIRONMENT == "production"
 
 
 @lru_cache

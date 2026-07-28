@@ -1,10 +1,12 @@
 "use client";
 
+import { Smartphone } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { BrandMark } from "@/components/brand-mark";
 import { NAV_ITEMS } from "@/components/layout/nav-items";
+import { ANDROID_APK_DOWNLOAD_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
@@ -34,6 +36,15 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <div className="px-3 pb-2">
+        <a
+          href={ANDROID_APK_DOWNLOAD_URL}
+          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-ink-600 hover:bg-ink-100 hover:text-ink-900"
+        >
+          <Smartphone className="h-4 w-4" />
+          Download Android App
+        </a>
+      </div>
       <div className="space-y-0.5 px-5 py-4 text-xs text-ink-400">
         <p>© {new Date().getFullYear()} Food Guard AI</p>
         <p>Powered by ChengetAi Labs</p>

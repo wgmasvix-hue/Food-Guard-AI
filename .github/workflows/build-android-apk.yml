@@ -8,6 +8,9 @@ on:
       - "android/**"
       - ".github/workflows/build-android-apk.yml"
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -55,6 +58,7 @@ jobs:
             exit 1
           fi
           echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
+          cp "$APK_PATH" FoodGuardAI.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -63,6 +67,19 @@ jobs:
           path: android/${{ steps.find_apk.outputs.apk_path }}
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish GitHub Release (stable download link)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-${{ github.run_number }}
+          name: FoodGuard AI Android build ${{ github.run_number }}
+          make_latest: true
+          files: android/FoodGuardAI.apk
+          body: |
+            Automated Android build from commit ${{ github.sha }}.
+
+            Always download the current version from the stable link:
+            https://github.com/${{ github.repository }}/releases/latest/download/FoodGuardAI.apk
 
       - name: Clean up keystore from workspace
         if: always()
