@@ -167,6 +167,17 @@ docker exec "$CADDY_CONTAINER" caddy validate --config "$CADDYFILE_CONTAINER_PAT
 log "Reloading Caddy..."
 docker exec "$CADDY_CONTAINER" caddy reload --config "$CADDYFILE_CONTAINER_PATH" --adapter caddyfile
 
+# ---------- backups + health monitoring ----------
+log "Installing nightly backups (02:30) and health-check alerts (every 5 min)..."
+install -m 755 deploy/backup.sh /usr/local/bin/food-guard-ai-backup.sh
+sed -i "s#__INSTALL_DIR__#${INSTALL_DIR}#g" /usr/local/bin/food-guard-ai-backup.sh
+install -m 755 deploy/healthcheck-alert.sh /usr/local/bin/food-guard-ai-healthcheck.sh
+sed -i "s#__INSTALL_DIR__#${INSTALL_DIR}#g" /usr/local/bin/food-guard-ai-healthcheck.sh
+cat > /etc/cron.d/food-guard-ai-ops <<EOF
+30 2 * * * root /usr/local/bin/food-guard-ai-backup.sh >> /var/log/food-guard-ai-backup.log 2>&1
+*/5 * * * * root /usr/local/bin/food-guard-ai-healthcheck.sh >> /var/log/food-guard-ai-healthcheck.log 2>&1
+EOF
+
 # ---------- seed demo data ----------
 if [[ "${SKIP_SEED:-0}" != "1" ]]; then
   log "Loading demo data (safe to re-run; skips if already seeded)..."

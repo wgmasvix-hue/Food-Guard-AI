@@ -178,7 +178,7 @@ Each script deploys the `claude/food-guard-ai-platform-z05ynw` branch by default
 
 - Set `ENVIRONMENT=production` and a strong, unique `SECRET_KEY`.
 - The compose file binds `db`, `api`, and `web` to `127.0.0.1`/internal-only by default; `API_HOST_PORT`/`WEB_HOST_PORT` control which loopback ports `api`/`web` publish to, so a reverse proxy on the same host can reach them without any port being exposed publicly except the proxy itself.
-- Put PostgreSQL and file uploads (`/data/uploads` volume) on durable, backed-up storage.
+- Put PostgreSQL and file uploads (`/data/uploads` volume) on durable, backed-up storage — every install script now sets up nightly backups and health-check alerting automatically; see `docs/OPERATIONS.md` for what's installed and how to restore.
 - Restrict `BACKEND_CORS_ORIGINS` to your real frontend domain(s) — the install scripts do this for you.
 - Tune `RATE_LIMIT_PER_MINUTE` / `AUTH_RATE_LIMIT_PER_MINUTE` for your traffic.
 - Run behind a process supervisor / orchestrator (Docker Swarm, Kubernetes, ECS, etc.) for zero-downtime deploys; the containers here are stateless aside from the `db`, `pgdata`, `api-uploads`, and (nginx-path only) `certbot-etc` volumes.
