@@ -1,0 +1,59 @@
+# Render Blueprint — deploys Food Guard AI as two Docker web services plus
+# a managed Postgres database. In the Render dashboard: New -> Blueprint,
+# point it at this repo/branch, and it reads this file automatically.
+#
+# IMPORTANT: service hostnames on Render are globally unique. If
+# "food-guard-ai-api" or "food-guard-ai-web" is already taken by another
+# Render account, Render will suffix the actual hostname (e.g.
+# food-guard-ai-web-ab12.onrender.com) and the hardcoded URLs below
+# (BACKEND_CORS_ORIGINS, NEXT_PUBLIC_API_URL) will need a manual update
+# to match — check the real URLs on the dashboard after the first deploy.
+#
+# The AI Assistant is disabled by default here (AI_PROVIDER=disabled)
+# since there's no Ollama instance running on Render — point
+# OLLAMA_BASE_URL at an externally-hosted Ollama and flip AI_PROVIDER
+# back to "ollama" if you have one.
+
+databases:
+  - name: food-guard-ai-db
+    databaseName: foodguard
+    user: foodguard
+    plan: basic-256mb
+
+services:
+  - type: web
+    name: food-guard-ai-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: starter
+    healthCheckPath: /health
+    disk:
+      name: uploads
+      mountPath: /data/uploads
+      sizeGB: 1
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: food-guard-ai-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production
+      - key: BACKEND_CORS_ORIGINS
+        value: '["https://food-guard-ai-web.onrender.com"]'
+      - key: AI_PROVIDER
+        value: disabled
+      - key: API_WORKERS
+        value: "1"
+
+  - type: web
+    name: food-guard-ai-web
+    runtime: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    plan: starter
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://food-guard-ai-api.onrender.com/api/v1

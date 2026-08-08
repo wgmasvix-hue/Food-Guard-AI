@@ -45,6 +45,21 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     EMAILS_FROM: str = "noreply@foodguard.ai"
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def _use_psycopg_driver(cls, v):
+        # Managed Postgres providers (Render, Heroku, etc.) hand back a plain
+        # postgres:// or postgresql:// connection string. SQLAlchemy needs the
+        # +psycopg suffix to pick the psycopg3 driver we actually install
+        # (requirements.txt has psycopg[binary], not psycopg2) — rewrite the
+        # scheme rather than requiring every deploy target to know that.
+        if isinstance(v, str):
+            if v.startswith("postgres://"):
+                return "postgresql+psycopg://" + v[len("postgres://"):]
+            if v.startswith("postgresql://"):
+                return "postgresql+psycopg://" + v[len("postgresql://"):]
+        return v
+
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def _split_origins(cls, v):
@@ -54,9 +69,9 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _refuse_insecure_production_secret(self):
-        if self.ENVIRONMENT == "production" and self.SECRET_KEY == INSECURE_DEFAULT_SECRET_KEY:
+        if self.ENVIRONMENT == "production" and self.SECRET_KEY in KNOWN_PLACEHOLDER_SECRET_KEYS:
             raise RuntimeError(
-                "SECRET_KEY is still set to the insecure default while ENVIRONMENT=production. "
+                "SECRET_KEY is still set to a placeholder value while ENVIRONMENT=production. "
                 "Set a unique SECRET_KEY (e.g. `openssl rand -hex 32`) in your .env before starting."
             )
         return self

@@ -174,6 +174,15 @@ All four are safe to re-run: they skip secret generation if `.env` already exist
 
 Each script deploys the `claude/food-guard-ai-platform-z05ynw` branch by default (override with `BRANCH=main` once you've merged it) — review the diff and merge to `main` via a PR before treating a deployment as your production baseline long-term.
 
+### Managed platform (Render)
+
+`render.yaml` at the repo root is a [Render Blueprint](https://render.com/docs/infrastructure-as-code): in the Render dashboard, **New → Blueprint**, point it at this repo/branch, and Render provisions a managed Postgres database plus the `api` and `web` Docker services (built from `backend/Dockerfile` and `frontend/Dockerfile` respectively — do **not** point a single Render service at the repo root, there's no root-level Dockerfile).
+
+Read the comment block at the top of `render.yaml` before syncing — in particular:
+- Service hostnames are globally unique on Render. If `food-guard-ai-api`/`-web` are already taken, Render suffixes the real hostname, and you'll need to update `BACKEND_CORS_ORIGINS` (on the api service) and `NEXT_PUBLIC_API_URL` (on the web service, requires a rebuild since it's baked in at build time) to match.
+- The AI Assistant ships disabled (`AI_PROVIDER=disabled`) since there's no Ollama instance on Render — point `OLLAMA_BASE_URL` at an externally-hosted Ollama and flip it back to `ollama` if you have one.
+- Uploaded files persist on a Render Disk mounted at `/data/uploads`; the database backup/restore/health-check cron jobs from `docs/OPERATIONS.md` don't apply here (Render manages backups and health checks itself) — use Render's own Postgres backup and service health-check settings instead.
+
 ### Production notes (whether or not you use a script)
 
 - Set `ENVIRONMENT=production` and a strong, unique `SECRET_KEY`.
