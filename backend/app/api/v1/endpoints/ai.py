@@ -16,6 +16,7 @@ from app.schemas.ai import (
 from app.services.ai import get_ai_provider
 from app.services.ai.company_context import build_company_context
 from app.services.ai.prompts import QA_SYSTEM_PROMPT, get_document_system_prompt
+from app.services.billing.limits import ai_assistant_allowed
 
 MAX_HISTORY_MESSAGES = 12
 
@@ -40,6 +41,11 @@ async def generate_document(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
+    if not ai_assistant_allowed(db, current_user.company_id):
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail="The AI Assistant isn't included in your current plan. Upgrade to enable it.",
+        )
     provider = get_ai_provider()
     system_prompt = get_document_system_prompt(payload.document_type)
     try:
@@ -71,6 +77,11 @@ async def chat(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
+    if not ai_assistant_allowed(db, current_user.company_id):
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail="The AI Assistant isn't included in your current plan. Upgrade to enable it.",
+        )
     if payload.conversation_id:
         conversation = db.get(AIConversation, payload.conversation_id)
         if not conversation or conversation.user_id != current_user.id:

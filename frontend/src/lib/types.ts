@@ -342,3 +342,27 @@ export interface Notification {
   is_read: boolean;
   created_at: string;
 }
+
+export interface SubscriptionPlan {
+  id: string;
+  code: string;
+  name: string;
+  price_cents: number;
+  currency: string;
+  billing_interval: string;
+  max_facilities: number | null;
+  max_employees: number | null;
+  ai_assistant_included: boolean;
+  is_self_serve: boolean;
+  sort_order: number;
+}
+
+export interface Subscription {
+  id: string;
+  company_id: string;
+  plan_id: string;
+  status: string;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  plan: SubscriptionPlan;
+}

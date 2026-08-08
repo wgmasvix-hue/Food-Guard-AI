@@ -80,6 +80,20 @@ Don't also run `--profile ai up -d ollama` at the same time — pick one Ollama 
 
 To use a different AI backend later (cloud LLM), implement `app.services.ai.base.AIProvider` and register it in `app.services.ai.factory.get_ai_provider()` — no other code changes needed.
 
+## 3b. Billing (Stripe subscriptions)
+
+Three tiers ship by default — Free, Pro, Enterprise — seeded by the `da1ef730bb20_billing_subscriptions_and_plans` migration (`backend/alembic/versions/`) and visible in **Settings → Billing** for any logged-in user. Their exact prices/limits are starting-point defaults; edit the `PLAN_DEFAULTS` list at the top of that migration file before it's ever run against your real database (adjust and re-run `alembic upgrade head` if you already ran it — the seeded rows are just data, safe to `UPDATE subscription_plans SET ...` by hand too).
+
+With `STRIPE_SECRET_KEY` unset (the default), the billing UI still works — plans and the current subscription display normally — but "Upgrade" explains that checkout isn't configured instead of charging anyone. To enable real payments:
+
+1. Create a [Stripe](https://dashboard.stripe.com) account and a Product + recurring Price for each self-serve paid plan (Pro by default; Enterprise ships `is_self_serve: false`, meaning "Contact us" rather than a Stripe checkout).
+2. Set `stripe_price_id` on the matching `subscription_plans` row to that Price's ID (`price_...`).
+3. Set `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY` in `.env` (test-mode keys first — `sk_test_...`/`pk_test_...`).
+4. Add a webhook endpoint in the Stripe dashboard pointing at `https://<your-domain>/api/v1/billing/webhook`, subscribed to at least `customer.subscription.created`, `customer.subscription.updated`, and `customer.subscription.deleted`. Set `STRIPE_WEBHOOK_SECRET` in `.env` to the signing secret Stripe shows you.
+5. Redeploy (`docker compose up -d --build api` or re-run your install script) so the API picks up the new env vars.
+
+`app.services.billing.base.BillingProvider` is the same kind of swappable interface as the AI provider — a different payment processor could replace `StripeBillingProvider` without touching the endpoints or plan-gating logic in `app.services.billing.limits`.
+
 ## 4. Local Development (without Docker)
 
 ### Backend

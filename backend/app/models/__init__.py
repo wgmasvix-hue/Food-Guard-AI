@@ -3,6 +3,7 @@ from app.models.ai import AIConversation, AIMessage
 from app.models.attachment import Attachment
 from app.models.audit import Audit, AuditFinding
 from app.models.audit_template import AuditAIAnalysis, AuditChecklistItem, AuditTemplate, AuditTemplateItem
+from app.models.billing import Subscription, SubscriptionPlan
 from app.models.company import Company, Department, Facility, ProductionLine
 from app.models.corrective_action import CorrectiveAction
 from app.models.document import Document, DocumentVersion
@@ -21,6 +22,7 @@ from app.models.enums import (
     ProductionLineStatus,
     RiskLevel,
     SignatureMeaning,
+    SubscriptionStatus,
     TemperatureUnitType,
     UserRole,
 )
@@ -42,7 +44,7 @@ __all__ = [
     "DocumentCategory", "DocumentVersion", "Employee", "Facility", "GMPCategory",
     "HaccpPlan", "HaccpReview", "Hazard", "HazardType", "Ingredient", "MonitoringRecord",
     "Notification", "NotificationLevel", "Product", "ProductionLine", "ProductionLineStatus", "RiskLevel",
-    "SignatureMeaning", "Supplier", "SystemLog",
+    "SignatureMeaning", "Subscription", "SubscriptionPlan", "SubscriptionStatus", "Supplier", "SystemLog",
     "TemperatureLog", "TemperatureUnit", "TemperatureUnitType", "User", "UserRole",
     "AuditStatus", "AuditType",
 ]

@@ -7,6 +7,7 @@ from app.models.company import Company, Department, Facility, ProductionLine
 from app.models.employee import Employee
 from app.models.enums import UserRole
 from app.models.user import User
+from app.services.billing.limits import enforce_employee_limit, enforce_facility_limit
 from app.schemas.company import (
     CompanyCreate,
     CompanyRead,
@@ -100,7 +101,9 @@ def create_facility(
     current_user: User = Depends(require_min_role(UserRole.COMPANY_ADMIN)),
     db: Session = Depends(get_db),
 ):
-    facility = Facility(company_id=_scoped_company_id(current_user), **payload.model_dump())
+    company_id = _scoped_company_id(current_user)
+    enforce_facility_limit(db, company_id)
+    facility = Facility(company_id=company_id, **payload.model_dump())
     db.add(facility)
     db.commit()
     db.refresh(facility)
@@ -169,7 +172,9 @@ def create_employee(
     current_user: User = Depends(require_min_role(UserRole.PRODUCTION_SUPERVISOR)),
     db: Session = Depends(get_db),
 ):
-    employee = Employee(company_id=_scoped_company_id(current_user), **payload.model_dump())
+    company_id = _scoped_company_id(current_user)
+    enforce_employee_limit(db, company_id)
+    employee = Employee(company_id=company_id, **payload.model_dump())
     db.add(employee)
     db.commit()
     db.refresh(employee)

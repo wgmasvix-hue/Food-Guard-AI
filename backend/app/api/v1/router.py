@@ -5,6 +5,7 @@ from app.api.v1.endpoints import (
     attachments,
     audits,
     auth,
+    billing,
     companies,
     corrective_actions,
     dashboard,
@@ -36,3 +37,4 @@ api_router.include_router(notifications.router, prefix="/notifications", tags=["
 api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
 api_router.include_router(signatures.router, prefix="/signatures", tags=["Digital Signatures"])
 api_router.include_router(attachments.router, prefix="/attachments", tags=["Attachments"])
+api_router.include_router(billing.router, prefix="/billing", tags=["Billing"])

@@ -13,6 +13,7 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
+from app.models.billing import Subscription, SubscriptionPlan
 from app.models.company import Company
 from app.models.enums import UserRole
 from app.models.user import User
@@ -50,6 +51,10 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
         company = Company(name=payload.company_name)
         db.add(company)
         db.flush()
+
+        free_plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.code == "free").first()
+        if free_plan:
+            db.add(Subscription(company_id=company.id, plan_id=free_plan.id))
 
     user = User(
         email=payload.email,

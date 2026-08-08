@@ -45,6 +45,13 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     EMAILS_FROM: str = "noreply@foodguard.ai"
 
+    # Billing is optional: with these unset, the billing UI still shows
+    # plans/current subscription, but checkout/portal/webhooks are
+    # disabled (see app.services.billing).
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_PUBLISHABLE_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def _use_psycopg_driver(cls, v):

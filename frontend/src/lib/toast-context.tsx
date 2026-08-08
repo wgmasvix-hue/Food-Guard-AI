@@ -1,11 +1,11 @@
 "use client";
 
-import { CheckCircle2, XCircle, X } from "lucide-react";
+import { CheckCircle2, Info, XCircle, X } from "lucide-react";
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-type ToastKind = "success" | "error";
+type ToastKind = "success" | "error" | "info";
 
 interface Toast {
   id: number;
@@ -16,6 +16,7 @@ interface Toast {
 interface ToastContextValue {
   success: (message: string) => void;
   error: (message: string) => void;
+  info: (message: string) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
@@ -42,6 +43,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const value: ToastContextValue = {
     success: (message) => push("success", message),
     error: (message) => push("error", message),
+    info: (message) => push("info", message),
   };
 
   return (
@@ -54,16 +56,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             role="status"
             className={cn(
               "pointer-events-auto flex w-full max-w-sm items-start gap-2 rounded-lg border px-4 py-3 shadow-lg animate-fade-in",
-              toast.kind === "success"
-                ? "border-brand-200 bg-brand-50 text-brand-800"
-                : "border-red-200 bg-red-50 text-red-800"
+              toast.kind === "success" && "border-brand-200 bg-brand-50 text-brand-800",
+              toast.kind === "error" && "border-red-200 bg-red-50 text-red-800",
+              toast.kind === "info" && "border-ink-200 bg-surface text-ink-800"
             )}
           >
-            {toast.kind === "success" ? (
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-            ) : (
-              <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            )}
+            {toast.kind === "success" && <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />}
+            {toast.kind === "error" && <XCircle className="mt-0.5 h-4 w-4 shrink-0" />}
+            {toast.kind === "info" && <Info className="mt-0.5 h-4 w-4 shrink-0" />}
             <p className="flex-1 text-sm">{toast.message}</p>
             <button
               onClick={() => dismiss(toast.id)}

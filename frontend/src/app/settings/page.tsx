@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { ProtectedShell } from "@/components/layout/protected-shell";
@@ -16,8 +16,8 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { useToast } from "@/lib/toast-context";
 import { api, apiErrorMessage } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
-import type { Company, Facility, ProductionLine, User } from "@/lib/types";
-import { roleLabel } from "@/lib/utils";
+import type { Company, Facility, ProductionLine, Subscription, SubscriptionPlan, User } from "@/lib/types";
+import { cn, roleLabel } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -76,8 +76,148 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      <BillingCard />
       <ProductionLinesCard />
     </ProtectedShell>
+  );
+}
+
+function formatPrice(cents: number, currency: string) {
+  if (cents === 0) return null;
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: currency.toUpperCase() }).format(cents / 100);
+}
+
+function BillingCard() {
+  const toast = useToast();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
+
+  const { data: plans } = useQuery({
+    queryKey: ["billing-plans"],
+    queryFn: async () => (await api.get<SubscriptionPlan[]>("/billing/plans")).data,
+  });
+  const { data: subscription } = useQuery({
+    queryKey: ["billing-subscription"],
+    queryFn: async () => (await api.get<Subscription>("/billing/subscription")).data,
+    retry: false,
+  });
+
+  async function upgrade(plan: SubscriptionPlan) {
+    setLoadingPlan(plan.code);
+    try {
+      const { data } = await api.post("/billing/checkout", {
+        plan_code: plan.code,
+        success_url: window.location.href,
+        cancel_url: window.location.href,
+      });
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+      } else {
+        toast.info(data.message ?? "Checkout isn't available for this plan yet.");
+      }
+    } catch (err) {
+      toast.error(apiErrorMessage(err));
+    } finally {
+      setLoadingPlan(null);
+    }
+  }
+
+  async function manageBilling() {
+    setPortalLoading(true);
+    try {
+      const { data } = await api.post("/billing/portal", { return_url: window.location.href });
+      if (data.portal_url) {
+        window.location.href = data.portal_url;
+      } else {
+        toast.info(data.message ?? "Nothing to manage yet — subscribe to a paid plan first.");
+      }
+    } catch (err) {
+      toast.error(apiErrorMessage(err));
+    } finally {
+      setPortalLoading(false);
+    }
+  }
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle>Billing &amp; Plan</CardTitle>
+        {subscription?.plan && (
+          <div className="flex items-center gap-2">
+            <StatusBadge status={subscription.status} />
+            {subscription.plan.price_cents > 0 && (
+              <Button size="sm" variant="outline" onClick={manageBilling} disabled={portalLoading}>
+                {portalLoading ? "Loading…" : "Manage Billing"}
+              </Button>
+            )}
+          </div>
+        )}
+      </CardHeader>
+      <CardContent>
+        {subscription?.plan && (
+          <p className="mb-5 text-sm text-ink-600">
+            Currently on the <span className="font-semibold text-ink-900">{subscription.plan.name}</span> plan.
+            {subscription.cancel_at_period_end && subscription.current_period_end && (
+              <> Cancels on {new Date(subscription.current_period_end).toLocaleDateString()}.</>
+            )}
+          </p>
+        )}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {plans?.map((plan) => {
+            const isCurrent = subscription?.plan.code === plan.code;
+            const price = formatPrice(plan.price_cents, plan.currency);
+            return (
+              <div
+                key={plan.id}
+                className={cn(
+                  "flex flex-col rounded-2xl border p-5 transition-shadow",
+                  isCurrent ? "border-brand-500 shadow-soft" : "border-ink-200/70"
+                )}
+              >
+                <h4 className="text-sm font-semibold text-ink-900">{plan.name}</h4>
+                <p className="mt-1 text-2xl font-bold text-ink-900">
+                  {price ? (
+                    <>
+                      {price}
+                      <span className="text-sm font-normal text-ink-400">/{plan.billing_interval}</span>
+                    </>
+                  ) : plan.is_self_serve ? (
+                    "Free"
+                  ) : (
+                    "Contact us"
+                  )}
+                </p>
+                <ul className="mt-3 flex-1 space-y-1.5 text-xs text-ink-600">
+                  <li className="flex items-center gap-1.5">
+                    <Check className="h-3.5 w-3.5 shrink-0 text-brand-600" />
+                    {plan.max_facilities ?? "Unlimited"} facilit{plan.max_facilities === 1 ? "y" : "ies"}
+                  </li>
+                  <li className="flex items-center gap-1.5">
+                    <Check className="h-3.5 w-3.5 shrink-0 text-brand-600" />
+                    {plan.max_employees ?? "Unlimited"} employees
+                  </li>
+                  {plan.ai_assistant_included && (
+                    <li className="flex items-center gap-1.5">
+                      <Check className="h-3.5 w-3.5 shrink-0 text-brand-600" />
+                      AI Assistant included
+                    </li>
+                  )}
+                </ul>
+                <Button
+                  size="sm"
+                  variant={isCurrent ? "outline" : "primary"}
+                  className="mt-4"
+                  disabled={isCurrent || loadingPlan === plan.code}
+                  onClick={() => upgrade(plan)}
+                >
+                  {isCurrent ? "Current plan" : loadingPlan === plan.code ? "Loading…" : plan.is_self_serve ? "Upgrade" : "Contact us"}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
