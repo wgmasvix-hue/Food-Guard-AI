@@ -170,7 +170,7 @@ function ChatPanel() {
 
   return (
     <Card className="flex h-[70vh] flex-col">
-      <CardHeader><CardTitle>Ask Food Guard AI</CardTitle></CardHeader>
+      <CardHeader><CardTitle>Ask FoodOS</CardTitle></CardHeader>
       <CardContent className="flex flex-1 flex-col overflow-hidden">
         <div className="flex-1 space-y-3 overflow-y-auto pr-1 scrollbar-thin">
           {messages.length === 0 && (

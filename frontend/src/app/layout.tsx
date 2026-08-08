@@ -10,7 +10,7 @@ import { ToastProvider } from "@/lib/toast-context";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Food Guard AI",
+  title: "FoodOS",
   description: "AI-powered Food Safety, Quality Management, and Compliance System",
   manifest: "/manifest.json",
   icons: {
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Food Guard AI",
+    title: "FoodOS",
   },
 };
 

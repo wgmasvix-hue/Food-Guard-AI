@@ -1,8 +1,8 @@
 {
   "packageId": "ai.foodguard.twa",
   "host": "foodguard.chengetailabs.co.zw",
-  "name": "Food Guard AI",
-  "launcherName": "FoodGuard AI",
+  "name": "FoodOS",
+  "launcherName": "FoodOS",
   "display": "standalone",
   "orientation": "portrait",
   "themeColor": "#16a34a",

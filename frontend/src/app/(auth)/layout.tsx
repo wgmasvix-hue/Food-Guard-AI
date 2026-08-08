@@ -7,7 +7,7 @@ import { ANDROID_APK_DOWNLOAD_URL } from "@/lib/constants";
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl bg-surface p-8 shadow-2xl">
+      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-surface/90 p-8 shadow-soft-lg backdrop-blur-xl">
         <div className="mb-6 flex justify-center">
           <BrandMark />
         </div>

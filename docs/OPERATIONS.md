@@ -1,6 +1,6 @@
 # Operations Runbook
 
-This covers what to do after Food Guard AI is installed and live: backups,
+This covers what to do after FoodOS is installed and live: backups,
 restores, monitoring, log/resource limits, and updating the deployment.
 See `docs/INSTALL.md` for first-time setup.
 
@@ -74,7 +74,7 @@ Check current status by hand:
 
 ```bash
 curl -s http://127.0.0.1:8000/health | python3 -m json.tool
-# {"status": "ok", "service": "Food Guard AI", "database": "ok"}
+# {"status": "ok", "service": "FoodOS", "database": "ok"}
 ```
 
 ## Logs and disk usage

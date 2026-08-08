@@ -2,7 +2,7 @@
 
 ## Overview
 
-Food Guard AI is a modular monolith today, structured so individual modules (HACCP, GMP, Temperature, etc.) can be split into services later without a rewrite. The system is multi-tenant at the **company** level: every row of business data carries a `company_id`, and API endpoints scope all reads/writes to `current_user.company_id` (except `super_admin`, which can act across companies for platform administration).
+FoodOS is a modular monolith today, structured so individual modules (HACCP, GMP, Temperature, etc.) can be split into services later without a rewrite. The system is multi-tenant at the **company** level: every row of business data carries a `company_id`, and API endpoints scope all reads/writes to `current_user.company_id` (except `super_admin`, which can act across companies for platform administration).
 
 ```
 ┌─────────────┐      HTTPS       ┌────────────┐

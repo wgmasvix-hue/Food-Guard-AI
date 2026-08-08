@@ -1,6 +1,6 @@
 {
-  "name": "Food Guard AI",
-  "short_name": "FoodGuard AI",
+  "name": "FoodOS",
+  "short_name": "FoodOS",
   "description": "AI-powered Food Safety, Quality Management, and Compliance System",
   "start_url": "/dashboard",
   "id": "/dashboard",

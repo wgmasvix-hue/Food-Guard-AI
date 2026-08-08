@@ -38,7 +38,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
         onClick={onClose}
         className="absolute inset-0 bg-black/50 animate-fade-in"
       />
-      <div className="relative flex w-72 max-w-[80vw] flex-col bg-surface shadow-xl animate-fade-in">
+      <div className="relative flex w-72 max-w-[80vw] flex-col bg-surface/90 shadow-soft-lg backdrop-blur-xl animate-fade-in">
         <div className="flex items-center justify-between px-5 py-5">
           <BrandMark />
           <button
@@ -58,8 +58,8 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  active ? "bg-brand-50 text-brand-700" : "text-ink-600 hover:bg-ink-100 hover:text-ink-900"
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
+                  active ? "bg-brand-600 text-white shadow-soft" : "text-ink-600 hover:bg-ink-100/80 hover:text-ink-900"
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -68,7 +68,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
             );
           })}
         </nav>
-        <div className="px-5 py-4 text-xs text-ink-400">© {new Date().getFullYear()} Food Guard AI</div>
+        <div className="px-5 py-4 text-xs text-ink-400">© {new Date().getFullYear()} FoodOS</div>
       </div>
     </div>
   );

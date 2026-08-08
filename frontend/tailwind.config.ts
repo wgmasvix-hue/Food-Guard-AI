@@ -5,6 +5,27 @@ const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          '"SF Pro Display"',
+          '"SF Pro Text"',
+          '"Segoe UI"',
+          "system-ui",
+          "Roboto",
+          '"Helvetica Neue"',
+          "Arial",
+          "sans-serif",
+        ],
+      },
+      boxShadow: {
+        soft: "0 2px 20px -4px rgb(0 0 0 / 0.08)",
+        "soft-lg": "0 8px 40px -8px rgb(0 0 0 / 0.14)",
+      },
+      backdropBlur: {
+        xs: "2px",
+      },
       colors: {
         brand: {
           50: "#f0fdf4",

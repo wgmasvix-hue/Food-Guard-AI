@@ -1,8 +1,8 @@
-# Food Guard AI
+# FoodOS
 
 **AI-powered Food Safety, Quality Management & Compliance Platform** for food manufacturers and food service businesses.
 
-Food Guard AI replaces paper-based HACCP and GMP records with a secure, intelligent, cloud-ready system that works on desktop, tablet, and mobile devices. It is designed as the foundation of a complete Food Manufacturing ERP.
+FoodOS replaces paper-based HACCP and GMP records with a secure, intelligent, cloud-ready system that works on desktop, tablet, and mobile devices. It is designed as the foundation of a complete Food Manufacturing ERP.
 
 ![stack](https://img.shields.io/badge/stack-Next.js%20%7C%20FastAPI%20%7C%20PostgreSQL%20%7C%20Ollama-16a34a)
 
@@ -97,4 +97,4 @@ Inventory, production planning, recipes, food costing, nutrition analysis, label
 
 ## License
 
-Proprietary — © Food Guard AI.
+Proprietary — © FoodOS.

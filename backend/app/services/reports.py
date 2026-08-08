@@ -28,7 +28,7 @@ def _build_pdf(title: str, subtitle: str, elements: list) -> bytes:
         topMargin=2 * cm, bottomMargin=2 * cm, leftMargin=1.8 * cm, rightMargin=1.8 * cm,
     )
     story = [
-        Paragraph("Food Guard AI", TITLE_STYLE),
+        Paragraph("FoodOS", TITLE_STYLE),
         Paragraph(title, SUBTITLE_STYLE),
         Paragraph(subtitle, SUBTITLE_STYLE),
         Spacer(1, 0.6 * cm),

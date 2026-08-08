@@ -29,14 +29,14 @@ export function Dialog({ open, onClose, title, description, children, className 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-16 animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 pt-16 backdrop-blur-sm animate-fade-in">
       <div
         className={cn(
-          "w-full max-w-lg rounded-xl bg-surface shadow-xl animate-fade-in",
+          "w-full max-w-lg rounded-2xl border border-ink-200/60 bg-surface/95 shadow-soft-lg backdrop-blur-xl animate-fade-in",
           className
         )}
       >
-        <div className="flex items-start justify-between border-b border-ink-100 px-5 py-4">
+        <div className="flex items-start justify-between border-b border-ink-100/80 px-5 py-4">
           <div>
             <h2 className="text-base font-semibold text-ink-900">{title}</h2>
             {description && <p className="mt-0.5 text-sm text-ink-500">{description}</p>}

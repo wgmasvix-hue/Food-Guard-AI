@@ -1,4 +1,4 @@
-# Food Guard AI — Android app (Trusted Web Activity)
+# FoodOS — Android app (Trusted Web Activity)
 
 This wraps the live PWA at `https://foodguard.chengetailabs.co.zw` in a
 Trusted Web Activity (TWA) — a thin native Android shell around the

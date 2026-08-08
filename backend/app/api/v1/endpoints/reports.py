@@ -28,7 +28,7 @@ def _pdf_response(data: bytes, filename: str) -> Response:
 
 def _company_name(db: Session, company_id: str) -> str:
     company = db.get(Company, company_id)
-    return company.name if company else "Food Guard AI"
+    return company.name if company else "FoodOS"
 
 
 @router.get("/temperature-logs")

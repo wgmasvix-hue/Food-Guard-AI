@@ -13,7 +13,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden w-64 shrink-0 flex-col border-r border-ink-200 bg-surface md:flex">
+    <aside className="hidden w-64 shrink-0 flex-col border-r border-ink-200/60 bg-surface/80 backdrop-blur-xl md:flex">
       <div className="px-5 py-5">
         <BrandMark />
       </div>
@@ -26,8 +26,10 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                active ? "bg-brand-50 text-brand-700" : "text-ink-600 hover:bg-ink-100 hover:text-ink-900"
+                "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-150",
+                active
+                  ? "bg-brand-600 text-white shadow-soft"
+                  : "text-ink-600 hover:bg-ink-100/80 hover:text-ink-900"
               )}
             >
               <Icon className="h-4 w-4" />
@@ -46,7 +48,7 @@ export function Sidebar() {
         </a>
       </div>
       <div className="space-y-0.5 px-5 py-4 text-xs text-ink-400">
-        <p>© {new Date().getFullYear()} Food Guard AI</p>
+        <p>© {new Date().getFullYear()} FoodOS</p>
         <p>Powered by ChengetAi Labs</p>
       </div>
     </aside>

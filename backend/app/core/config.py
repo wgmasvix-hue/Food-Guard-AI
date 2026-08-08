@@ -14,7 +14,7 @@ KNOWN_PLACEHOLDER_SECRET_KEYS = {
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    PROJECT_NAME: str = "Food Guard AI"
+    PROJECT_NAME: str = "FoodOS"
     API_V1_PREFIX: str = "/api/v1"
     ENVIRONMENT: str = "development"
 

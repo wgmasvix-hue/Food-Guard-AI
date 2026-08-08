@@ -13,7 +13,7 @@ export function Topbar({ title, onMenuClick }: { title: string; onMenuClick: () 
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-ink-200 bg-surface px-4 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-ink-200/60 bg-surface/80 px-4 backdrop-blur-xl sm:px-6">
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
@@ -52,15 +52,15 @@ export function Topbar({ title, onMenuClick }: { title: string; onMenuClick: () 
                 aria-label="Close menu"
                 onClick={() => setMenuOpen(false)}
               />
-              <div className="absolute right-0 z-20 mt-2 w-56 rounded-lg border border-ink-200 bg-surface py-1 shadow-lg animate-fade-in">
-                <div className="border-b border-ink-100 px-3 py-2">
+              <div className="absolute right-0 z-20 mt-2 w-56 rounded-2xl border border-ink-200/60 bg-surface/95 py-1 shadow-soft-lg backdrop-blur-xl animate-fade-in">
+                <div className="border-b border-ink-100/80 px-3 py-2">
                   <p className="text-sm font-medium text-ink-900">{user?.full_name}</p>
                   <p className="text-xs text-ink-500">{user?.email}</p>
                   <p className="mt-1 text-xs font-medium text-brand-700">{roleLabel(user?.role)}</p>
                 </div>
                 <button
                   onClick={logout}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50"
                 >
                   <LogOut className="h-4 w-4" /> Sign out
                 </button>
