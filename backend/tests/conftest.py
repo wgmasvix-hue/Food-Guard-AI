@@ -49,6 +49,18 @@ def client():
 
 
 @pytest.fixture
+def db_session():
+    """A raw DB session for tests that need to call service-layer code
+    directly rather than going through the HTTP API. Shares the same
+    in-memory SQLite connection (StaticPool) as requests made via `client`."""
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@pytest.fixture
 def registered_user(client):
     payload = {
         "email": "owner@acme-foods.com",

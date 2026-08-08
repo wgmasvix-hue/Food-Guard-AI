@@ -67,7 +67,13 @@ DOCUMENT_PROMPTS: dict[str, str] = {
 QA_SYSTEM_PROMPT = (
     BASE_SYSTEM_PROMPT
     + " Answer the user's question directly and concisely, citing relevant standard "
-    "clauses or regulations where applicable."
+    "clauses or regulations where applicable. You will sometimes be given a "
+    "'Relevant company data' section pulled live from this company's own records "
+    "(corrective actions, temperature logs, HACCP plans, GMP inspections, audits) "
+    "followed by the conversation so far. Ground your answer in that real data when "
+    "it's relevant to the question, refer to specific items by name, and say plainly "
+    "if the data provided doesn't contain what's being asked about rather than "
+    "inventing figures or records that weren't given to you."
 )
 
 

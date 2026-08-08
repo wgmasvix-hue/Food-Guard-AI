@@ -32,6 +32,13 @@ const EXAMPLE_PROMPTS = [
   "Explain ISO 22000 clause 8.5.",
 ];
 
+const CHAT_EXAMPLE_PROMPTS = [
+  "What are our open corrective actions right now?",
+  "Any temperature excursions this week?",
+  "Summarize our HACCP plans and when they're next due for review.",
+  "Explain ISO 22000 clause 8.5.",
+];
+
 export default function AiAssistantPage() {
   const [mode, setMode] = useState<"generate" | "chat">("generate");
 
@@ -168,8 +175,11 @@ function ChatPanel() {
         <div className="flex-1 space-y-3 overflow-y-auto pr-1 scrollbar-thin">
           {messages.length === 0 && (
             <div className="space-y-2">
-              <p className="text-sm text-ink-500">Ask about HACCP, GMP, or food safety standards.</p>
-              {EXAMPLE_PROMPTS.map((ex) => (
+              <p className="text-sm text-ink-500">
+                Ask about your company&apos;s live data (corrective actions, temperature logs, HACCP plans, GMP
+                inspections, audits) or general food safety standards.
+              </p>
+              {CHAT_EXAMPLE_PROMPTS.map((ex) => (
                 <button key={ex} onClick={() => setInput(ex)} className="block w-full rounded-lg bg-ink-50 px-3 py-2 text-left text-sm text-ink-700 hover:bg-ink-100">
                   {ex}
                 </button>

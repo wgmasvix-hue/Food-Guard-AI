@@ -14,7 +14,10 @@ from app.schemas.ai import (
     AIMessageRead,
 )
 from app.services.ai import get_ai_provider
+from app.services.ai.company_context import build_company_context
 from app.services.ai.prompts import QA_SYSTEM_PROMPT, get_document_system_prompt
+
+MAX_HISTORY_MESSAGES = 12
 
 router = APIRouter()
 
@@ -84,9 +87,18 @@ async def chat(
     conversation.messages.append(AIMessage(role="user", content=payload.message))
     db.flush()
 
+    context = build_company_context(db, current_user.company_id, payload.message)
+    transcript = "\n".join(
+        f"{'User' if m.role == 'user' else 'Assistant'}: {m.content}"
+        for m in conversation.messages[-MAX_HISTORY_MESSAGES:]
+    )
+    user_prompt = (
+        f"Relevant company data:\n{context}\n\nConversation so far:\n{transcript}" if context else transcript
+    )
+
     provider = get_ai_provider()
     try:
-        reply = await provider.complete(QA_SYSTEM_PROMPT, payload.message)
+        reply = await provider.complete(QA_SYSTEM_PROMPT, user_prompt)
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
 
