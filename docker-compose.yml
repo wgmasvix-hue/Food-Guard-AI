@@ -6,11 +6,25 @@ x-logging: &default-logging
     max-size: "10m"
     max-file: "3"
 
+# Explicit public resolvers for every container. Docker is supposed to swap
+# in its own embedded DNS (127.0.0.11) when the host's /etc/resolv.conf
+# points at a loopback stub resolver (e.g. systemd-resolved's 127.0.0.53 on
+# Ubuntu), but that detection doesn't always kick in — when it doesn't,
+# containers inherit 127.0.0.53 verbatim, which isn't reachable from inside
+# a container's own network namespace, and every outbound DNS lookup (image
+# pulls from inside a container, Ollama model pulls, SMTP, webhooks) fails
+# with "connection refused". Pinning real resolvers here sidesteps that
+# entirely rather than depending on host-level detection working correctly.
+x-dns: &default-dns
+  - 1.1.1.1
+  - 8.8.8.8
+
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     logging: *default-logging
+    dns: *default-dns
     mem_limit: ${DB_MEM_LIMIT:-1g}
     cpus: ${DB_CPU_LIMIT:-1.0}
     environment:
@@ -32,6 +46,7 @@ services:
     build: ./backend
     restart: unless-stopped
     logging: *default-logging
+    dns: *default-dns
     mem_limit: ${API_MEM_LIMIT:-1g}
     cpus: ${API_CPU_LIMIT:-1.0}
     env_file: .env
@@ -55,6 +70,7 @@ services:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
     restart: unless-stopped
     logging: *default-logging
+    dns: *default-dns
     mem_limit: ${WEB_MEM_LIMIT:-512m}
     cpus: ${WEB_CPU_LIMIT:-0.5}
     environment:
@@ -72,6 +88,7 @@ services:
     image: nginx:1.27-alpine
     restart: unless-stopped
     logging: *default-logging
+    dns: *default-dns
     mem_limit: 128m
     cpus: 0.5
     depends_on:
@@ -89,6 +106,7 @@ services:
     image: ollama/ollama:latest
     restart: unless-stopped
     logging: *default-logging
+    dns: *default-dns
     mem_limit: ${OLLAMA_MEM_LIMIT:-4g}
     cpus: ${OLLAMA_CPU_LIMIT:-2.0}
     profiles: ["ai"]
