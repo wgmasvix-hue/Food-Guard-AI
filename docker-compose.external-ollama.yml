@@ -1,0 +1,27 @@
+# Override for reusing an Ollama instance that already runs as part of
+# another project on this host, instead of running a dedicated one here
+# (see docker-compose.yml's own "ollama" service, profile "ai", for that
+# default path). Attaches api to that project's Docker network so it can
+# reach the existing Ollama container by name.
+#
+# Usage:
+#   EXTERNAL_OLLAMA_NETWORK=rosersg_rosersg-network docker compose \
+#     -f docker-compose.yml -f docker-compose.external-ollama.yml up -d api
+#
+# Also set in .env to match:
+#   OLLAMA_BASE_URL=http://<external-ollama-container-name>:11434
+#   OLLAMA_MODEL=<a model already pulled there — check with
+#                 `docker exec <container> ollama list`>
+#
+# Don't also start this repo's own "ollama" service (--profile ai) at the
+# same time — pick one Ollama instance, not both fighting over RAM/CPU.
+services:
+  api:
+    networks:
+      - default
+      - external_ollama_net
+
+networks:
+  external_ollama_net:
+    name: ${EXTERNAL_OLLAMA_NETWORK:?Set EXTERNAL_OLLAMA_NETWORK to the Docker network the external Ollama container is on — see docker-compose.external-ollama.yml for how to find it}
+    external: true

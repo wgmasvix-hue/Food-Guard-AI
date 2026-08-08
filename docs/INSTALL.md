@@ -63,6 +63,21 @@ docker compose exec ollama ollama pull llama3.2
 
 The backend talks to Ollama via `OLLAMA_BASE_URL` / `OLLAMA_MODEL` in `.env`. To point at a different model, change `OLLAMA_MODEL` and re-pull, or set `AI_PROVIDER=disabled` to turn the assistant off entirely.
 
+### Reusing an Ollama instance from another project on the same host
+
+If the server already runs Ollama for something else, running a second instance means two containers fighting over the same RAM/CPU — often worse than just using the one that's already there, especially if outbound access to pull new models is restricted (common on locked-down hosts). `docker-compose.external-ollama.yml` attaches `api` to that other project's Docker network instead of starting our own `ollama` service:
+
+```bash
+# Find its network and what models it already has:
+docker inspect <container> --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}}{{"\n"}}{{end}}'
+docker exec <container> ollama list
+
+# Set OLLAMA_BASE_URL=http://<container-name>:11434 and OLLAMA_MODEL=<a model from the list above> in .env, then:
+EXTERNAL_OLLAMA_NETWORK=<network from above> docker compose -f docker-compose.yml -f docker-compose.external-ollama.yml up -d api
+```
+
+Don't also run `--profile ai up -d ollama` at the same time — pick one Ollama instance.
+
 To use a different AI backend later (cloud LLM), implement `app.services.ai.base.AIProvider` and register it in `app.services.ai.factory.get_ai_provider()` — no other code changes needed.
 
 ## 4. Local Development (without Docker)
