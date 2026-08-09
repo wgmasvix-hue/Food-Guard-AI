@@ -8,6 +8,7 @@ import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
+import { EmptyState, EmptyTableRow } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -59,7 +60,16 @@ export default function TemperaturePage() {
         <CardGridSkeleton count={3} />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {units?.length === 0 && <p className="text-sm text-ink-500">No temperature units configured yet.</p>}
+          {units?.length === 0 && (
+            <div className="sm:col-span-2 lg:col-span-3">
+              <EmptyState
+                icon={Thermometer}
+                title="No temperature units configured yet"
+                description="Add a cold room, freezer, or cooking unit to start logging readings and get automatic out-of-range alerts."
+                action={{ label: "New Unit", onClick: () => setCreateOpen(true) }}
+              />
+            </div>
+          )}
           {units?.map((unit) => (
             <button key={unit.id} onClick={() => setSelectedUnit(unit)} className="text-left">
               <Card className="h-full transition-shadow hover:shadow-md">
@@ -172,7 +182,7 @@ function UnitLogsDialog({ unit, onClose }: { unit: TemperatureUnit; onClose: () 
                 <td className="py-2 text-ink-500">{formatDateTime(log.recorded_at)}</td>
               </tr>
             ))}
-            {logs?.length === 0 && <tr><td colSpan={3} className="py-6 text-center text-ink-400">No readings yet.</td></tr>}
+            {logs?.length === 0 && <EmptyTableRow colSpan={3} title="No readings yet" />}
           </tbody>
         </table>
       </div>

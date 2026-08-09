@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Sparkles } from "lucide-react";
+import { ClipboardCheck, Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 
@@ -9,6 +9,7 @@ import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
+import { EmptyTableRow } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -93,7 +94,14 @@ export default function AuditsPage() {
                     <td className="px-5 py-3"><StatusBadge status={a.status} /></td>
                   </tr>
                 ))}
-                {audits?.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-ink-400">No audits scheduled yet.</td></tr>}
+                {audits?.length === 0 && (
+                  <EmptyTableRow
+                    colSpan={5}
+                    icon={ClipboardCheck}
+                    title="No audits scheduled yet"
+                    description="Schedule an internal, external, supplier, or regulatory audit to get started."
+                  />
+                )}
               </tbody>
             </table>
           </div>

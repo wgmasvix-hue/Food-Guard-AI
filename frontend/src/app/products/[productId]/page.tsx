@@ -9,6 +9,7 @@ import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
+import { EmptyState, EmptyTableRow } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StatusBadge } from "@/components/ui/badge";
@@ -115,7 +116,7 @@ export default function ProductDetailPage() {
           </CardHeader>
           <CardContent className="space-y-2">
             {formulations?.length === 0 && (
-              <p className="py-6 text-center text-sm text-ink-400">No formulations yet.</p>
+              <EmptyState title="No formulations yet" className="py-6" />
             )}
             {formulations?.map((f) => (
               <button
@@ -195,9 +196,7 @@ export default function ProductDetailPage() {
                         </tr>
                       ))}
                       {selected.items.length === 0 && (
-                        <tr>
-                          <td colSpan={4} className="py-6 text-center text-ink-400">No ingredients added.</td>
-                        </tr>
+                        <EmptyTableRow colSpan={4} title="No ingredients added yet" description="Add each ingredient's percentage, quantity, and cost below." />
                       )}
                     </tbody>
                   </table>

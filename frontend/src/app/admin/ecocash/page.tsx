@@ -1,11 +1,13 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 
 import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api, apiErrorMessage } from "@/lib/api-client";
@@ -76,7 +78,11 @@ export default function EcocashAdminPage() {
 
       {isLoading && <p className="text-sm text-ink-400">Loading…</p>}
       {pending?.length === 0 && (
-        <Card><CardContent className="py-10 text-center text-sm text-ink-500">Nothing pending review.</CardContent></Card>
+        <Card>
+          <CardContent className="p-0">
+            <EmptyState icon={CheckCircle2} title="Nothing pending review" description="New EcoCash payment submissions will show up here for approval." />
+          </CardContent>
+        </Card>
       )}
 
       <div className="space-y-4">

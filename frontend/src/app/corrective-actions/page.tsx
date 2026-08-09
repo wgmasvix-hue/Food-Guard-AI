@@ -1,13 +1,14 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { ClipboardList, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
+import { EmptyTableRow } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -95,9 +96,12 @@ export default function CorrectiveActionsPage() {
                   </tr>
                 ))}
                 {cas?.length === 0 && (
-                  <tr><td colSpan={4} className="py-6 text-center text-ink-400">
-                    {statusFilter ? `No corrective actions with status "${statusFilter.replace(/_/g, " ")}".` : "No corrective actions yet."}
-                  </td></tr>
+                  <EmptyTableRow
+                    colSpan={4}
+                    icon={ClipboardList}
+                    title={statusFilter ? `No corrective actions with status "${statusFilter.replace(/_/g, " ")}"` : "No corrective actions yet"}
+                    description={statusFilter ? undefined : "Corrective actions raised manually or from a failed audit/inspection will show up here."}
+                  />
                 )}
               </tbody>
             </table>

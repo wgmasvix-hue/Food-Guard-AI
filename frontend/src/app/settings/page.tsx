@@ -1,18 +1,20 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Plus } from "lucide-react";
+import { Check, Factory, Plus, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
+import { EmptyTableRow } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { StatusBadge } from "@/components/ui/badge";
 import { PasswordInput } from "@/components/ui/password-input";
+import { TableSkeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/lib/toast-context";
 import { api, apiErrorMessage } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
@@ -69,7 +71,7 @@ export default function SettingsPage() {
                     <td className="px-5 py-3"><StatusBadge status={u.is_active ? "active" : "inactive"} /></td>
                   </tr>
                 ))}
-                {users?.length === 0 && <tr><td colSpan={4} className="py-6 text-center text-ink-400">No team members yet.</td></tr>}
+                {users?.length === 0 && <EmptyTableRow colSpan={4} icon={Users} title="No team members yet" />}
               </tbody>
             </table>
           </div>
@@ -322,7 +324,7 @@ function ProductionLinesCard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-ink-100">
-              {isLoading && <tr><td colSpan={4} className="py-6 text-center text-ink-400">Loading…</td></tr>}
+              {isLoading && <TableSkeleton columns={4} />}
               {lines?.map((line) => (
                 <tr key={line.id}>
                   <td className="px-5 py-3 font-medium text-ink-800">{line.name}</td>
@@ -331,7 +333,7 @@ function ProductionLinesCard() {
                   <td className="px-5 py-3"><StatusBadge status={line.status} /></td>
                 </tr>
               ))}
-              {lines?.length === 0 && <tr><td colSpan={4} className="py-6 text-center text-ink-400">No production lines yet.</td></tr>}
+              {!isLoading && lines?.length === 0 && <EmptyTableRow colSpan={4} icon={Factory} title="No production lines yet" />}
             </tbody>
           </table>
         </div>

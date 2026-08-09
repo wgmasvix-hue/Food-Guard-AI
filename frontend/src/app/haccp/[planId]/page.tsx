@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { AlertTriangle, Plus, Target } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
@@ -9,6 +9,7 @@ import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
+import { EmptyState, EmptyTableRow } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -154,7 +155,7 @@ export default function HaccpPlanDetailPage() {
                   </tr>
                 ))}
                 {hazards?.length === 0 && (
-                  <tr><td colSpan={5} className="py-6 text-center text-ink-400">No hazards recorded yet.</td></tr>
+                  <EmptyTableRow colSpan={5} icon={AlertTriangle} title="No hazards recorded yet" description="Add each biological, chemical, physical, allergen, or radiological hazard for this process." />
                 )}
               </tbody>
             </table>
@@ -168,7 +169,7 @@ export default function HaccpPlanDetailPage() {
           <Button size="sm" variant="outline" onClick={() => setCcpOpen(true)}><Plus className="h-4 w-4" /> Add CCP</Button>
         </CardHeader>
         <CardContent className="space-y-3">
-          {ccps?.length === 0 && <p className="text-sm text-ink-500">No CCPs defined yet.</p>}
+          {ccps?.length === 0 && <EmptyState icon={Target} title="No CCPs defined yet" description="Mark a hazard above as a critical control point to define monitoring limits here." className="py-6" />}
           {ccps?.map((ccp) => (
             <button
               key={ccp.id}
@@ -350,7 +351,7 @@ function CcpMonitoringDialog({ ccp, onClose }: { ccp: CCP; onClose: () => void }
                 <td className="py-2 text-ink-500">{formatDateTime(r.recorded_at)}</td>
               </tr>
             ))}
-            {records?.length === 0 && <tr><td colSpan={3} className="py-6 text-center text-ink-400">No readings yet.</td></tr>}
+            {records?.length === 0 && <EmptyTableRow colSpan={3} title="No readings yet" />}
           </tbody>
         </table>
       </div>

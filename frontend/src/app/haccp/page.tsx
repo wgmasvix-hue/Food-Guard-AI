@@ -9,6 +9,7 @@ import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { StatusBadge } from "@/components/ui/badge";
@@ -65,8 +66,13 @@ export default function HaccpPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {plans?.length === 0 && (
             <Card className="sm:col-span-2 lg:col-span-3">
-              <CardContent className="py-10 text-center text-sm text-ink-500">
-                No HACCP plans yet. Create your first plan or ask the AI Assistant to draft one.
+              <CardContent className="p-0">
+                <EmptyState
+                  icon={ShieldAlert}
+                  title="No HACCP plans yet"
+                  description="Create your first plan, or ask the AI Assistant to draft one from your process description."
+                  action={{ label: "New HACCP Plan", onClick: () => setOpen(true) }}
+                />
               </CardContent>
             </Card>
           )}

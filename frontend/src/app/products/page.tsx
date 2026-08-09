@@ -9,6 +9,7 @@ import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CardGridSkeleton } from "@/components/ui/skeleton";
@@ -66,8 +67,13 @@ export default function ProductsPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {products?.length === 0 && (
             <Card className="sm:col-span-2 lg:col-span-3">
-              <CardContent className="py-10 text-center text-sm text-ink-500">
-                No products yet. Create one to start building a formulation.
+              <CardContent className="p-0">
+                <EmptyState
+                  icon={FlaskConical}
+                  title="No products yet"
+                  description="Create one to start building a versioned formulation with cost and allergen roll-up."
+                  action={{ label: "New Product", onClick: () => setOpen(true) }}
+                />
               </CardContent>
             </Card>
           )}

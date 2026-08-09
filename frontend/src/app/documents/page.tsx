@@ -1,13 +1,14 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, Plus, Search, X } from "lucide-react";
+import { FileSearch, FileText, Plus, Search, X } from "lucide-react";
 import { useState } from "react";
 
 import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
@@ -113,7 +114,11 @@ export default function DocumentsPage() {
         <div className="space-y-3">
           {searching && <p className="text-sm text-ink-400">Searching…</p>}
           {!searching && searchResults?.length === 0 && (
-            <p className="text-sm text-ink-500">No documents match &quot;{searchQuery}&quot;.</p>
+            <EmptyState
+              icon={FileSearch}
+              title={`No documents match "${searchQuery}"`}
+              description="Try a different phrase, or check the spelling — search looks at each document's full content, not just its title."
+            />
           )}
           {searchResults?.map((r) => (
             <Card key={r.document_id}>
@@ -132,9 +137,14 @@ export default function DocumentsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {documents?.length === 0 && (
-            <p className="text-sm text-ink-500">
-              {categoryFilter ? `No documents in "${categoryFilter.replace(/_/g, " ")}".` : "No documents yet."}
-            </p>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <EmptyState
+                icon={FileText}
+                title={categoryFilter ? `No documents in "${categoryFilter.replace(/_/g, " ")}"` : "No documents yet"}
+                description={categoryFilter ? undefined : "Upload SOPs, policies, certificates, and specifications to keep them version-controlled and searchable."}
+                action={categoryFilter ? undefined : { label: "New Document", onClick: () => setCreateOpen(true) }}
+              />
+            </div>
           )}
           {documents?.map((doc) => (
             <button key={doc.id} onClick={() => setSelected(doc)} className="text-left">
@@ -197,7 +207,7 @@ export default function DocumentsPage() {
                 )}
               </div>
             ))}
-            {selected.versions.length === 0 && <p className="text-sm text-ink-500">No versions uploaded yet.</p>}
+            {selected.versions.length === 0 && <EmptyState title="No versions uploaded yet" className="py-6" />}
           </div>
         </Dialog>
       )}

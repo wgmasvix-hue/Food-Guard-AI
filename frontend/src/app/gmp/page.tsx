@@ -1,13 +1,14 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ListChecks, Play } from "lucide-react";
+import { ClipboardCheck, ListChecks, Play } from "lucide-react";
 import { useState } from "react";
 
 import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
+import { EmptyState, EmptyTableRow } from "@/components/ui/empty-state";
 import { Textarea } from "@/components/ui/textarea";
 import { StatusBadge } from "@/components/ui/badge";
 import { Skeleton, TableSkeleton } from "@/components/ui/skeleton";
@@ -65,7 +66,11 @@ export default function GmpPage() {
                   </Button>
                 </div>
               ))}
-              {templates?.length === 0 && <p className="text-sm text-ink-500">No templates yet.</p>}
+              {templates?.length === 0 && (
+                <div className="sm:col-span-2 lg:col-span-3">
+                  <EmptyState icon={ListChecks} title="No checklist templates yet" description="Ask an admin to add a GMP checklist template to start running inspections." />
+                </div>
+              )}
             </div>
           )}
         </CardContent>
@@ -102,7 +107,9 @@ export default function GmpPage() {
                     </td>
                   </tr>
                 ))}
-                {checklists?.length === 0 && <tr><td colSpan={5} className="py-6 text-center text-ink-400">No inspections yet.</td></tr>}
+                {checklists?.length === 0 && (
+                  <EmptyTableRow colSpan={5} icon={ClipboardCheck} title="No inspections yet" description="Start one from a checklist template above." />
+                )}
               </tbody>
             </table>
           </div>
