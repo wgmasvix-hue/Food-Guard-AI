@@ -146,7 +146,7 @@ export default function HaccpPlanDetailPage() {
               </thead>
               <tbody className="divide-y divide-ink-100">
                 {hazards?.map((h) => (
-                  <tr key={h.id}>
+                  <tr key={h.id} className="transition-colors hover:bg-ink-50">
                     <td className="py-2 font-medium text-ink-800">{h.process_step}</td>
                     <td className="py-2 capitalize text-ink-600">{h.hazard_type}</td>
                     <td className="py-2 text-ink-600">{h.description}</td>
@@ -343,7 +343,7 @@ function CcpMonitoringDialog({ ccp, onClose }: { ccp: CCP; onClose: () => void }
           <tbody className="divide-y divide-ink-100">
             {isLoading && <tr><td colSpan={3} className="py-4 text-center text-ink-400">Loading…</td></tr>}
             {records?.map((r) => (
-              <tr key={r.id}>
+              <tr key={r.id} className="transition-colors hover:bg-ink-50">
                 <td className="py-2">{r.measured_value} {r.unit}</td>
                 <td className="py-2">
                   <StatusBadge status={r.within_limits ? "active" : "open"} />

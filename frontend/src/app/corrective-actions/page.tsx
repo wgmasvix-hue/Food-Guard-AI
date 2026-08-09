@@ -77,7 +77,7 @@ export default function CorrectiveActionsPage() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead>
+              <thead className="sticky top-16 z-10 bg-surface">
                 <tr className="border-b border-ink-100 text-xs uppercase text-ink-400">
                   <th className="px-5 py-3">Title</th>
                   <th className="px-5 py-3">Source</th>
@@ -88,7 +88,7 @@ export default function CorrectiveActionsPage() {
               <tbody className="divide-y divide-ink-100">
                 {isLoading && <TableSkeleton columns={4} />}
                 {cas?.map((ca) => (
-                  <tr key={ca.id} className="cursor-pointer hover:bg-ink-50" onClick={() => setSelected(ca)}>
+                  <tr key={ca.id} className="cursor-pointer transition-colors hover:bg-ink-50" onClick={() => setSelected(ca)}>
                     <td className="px-5 py-3 font-medium text-ink-800">{ca.title}</td>
                     <td className="px-5 py-3 capitalize text-ink-600">{ca.source ?? "manual"}</td>
                     <td className="px-5 py-3 text-ink-600">{formatDate(ca.deadline)}</td>

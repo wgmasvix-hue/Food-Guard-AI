@@ -74,7 +74,7 @@ export default function AuditsPage() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead>
+              <thead className="sticky top-16 z-10 bg-surface">
                 <tr className="border-b border-ink-100 text-xs uppercase text-ink-400">
                   <th className="px-5 py-3">Title</th>
                   <th className="px-5 py-3">Type</th>
@@ -86,7 +86,7 @@ export default function AuditsPage() {
               <tbody className="divide-y divide-ink-100">
                 {isLoading && <TableSkeleton columns={5} />}
                 {audits?.map((a) => (
-                  <tr key={a.id} className="cursor-pointer hover:bg-ink-50" onClick={() => setSelectedId(a.id)}>
+                  <tr key={a.id} className="cursor-pointer transition-colors hover:bg-ink-50" onClick={() => setSelectedId(a.id)}>
                     <td className="px-5 py-3 font-medium text-ink-800">{a.title}</td>
                     <td className="px-5 py-3 capitalize text-ink-600">{a.audit_type}</td>
                     <td className="px-5 py-3 text-ink-600">{a.standard ?? "—"}</td>

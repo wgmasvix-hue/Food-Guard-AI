@@ -95,7 +95,7 @@ export default function GmpPage() {
               <tbody className="divide-y divide-ink-100">
                 {loadingChecklists && <TableSkeleton columns={5} />}
                 {checklists?.map((c) => (
-                  <tr key={c.id}>
+                  <tr key={c.id} className="transition-colors hover:bg-ink-50">
                     <td className="py-2"><StatusBadge status={c.status} /></td>
                     <td className="py-2 text-ink-700">{c.score != null ? `${c.score}%` : "—"}</td>
                     <td className="py-2 text-ink-500">{formatDateTime(c.started_at)}</td>

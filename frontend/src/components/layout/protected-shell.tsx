@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 
+import { BrandMark } from "@/components/brand-mark";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Topbar } from "@/components/layout/topbar";
@@ -21,8 +22,9 @@ export function ProtectedShell({ title, children }: { title: string; children: R
 
   if (isLoading || !user) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-ink-500">
-        Loading…
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-ink-50">
+        <BrandMark className="animate-fade-in" />
+        <span className="h-6 w-6 animate-spin rounded-full border-2 border-ink-200 border-t-brand-600" />
       </div>
     );
   }

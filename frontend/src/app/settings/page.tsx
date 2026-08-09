@@ -54,7 +54,7 @@ export default function SettingsPage() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead>
+              <thead className="sticky top-16 z-10 bg-surface">
                 <tr className="border-b border-ink-100 text-xs uppercase text-ink-400">
                   <th className="px-5 py-3">Name</th>
                   <th className="px-5 py-3">Email</th>
@@ -64,7 +64,7 @@ export default function SettingsPage() {
               </thead>
               <tbody className="divide-y divide-ink-100">
                 {users?.map((u) => (
-                  <tr key={u.id}>
+                  <tr key={u.id} className="transition-colors hover:bg-ink-50">
                     <td className="px-5 py-3 font-medium text-ink-800">{u.full_name}</td>
                     <td className="px-5 py-3 text-ink-600">{u.email}</td>
                     <td className="px-5 py-3 text-ink-600">{roleLabel(u.role)}</td>
@@ -315,7 +315,7 @@ function ProductionLinesCard() {
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead>
+            <thead className="sticky top-16 z-10 bg-surface">
               <tr className="border-b border-ink-100 text-xs uppercase text-ink-400">
                 <th className="px-5 py-3">Name</th>
                 <th className="px-5 py-3">Type</th>
@@ -326,7 +326,7 @@ function ProductionLinesCard() {
             <tbody className="divide-y divide-ink-100">
               {isLoading && <TableSkeleton columns={4} />}
               {lines?.map((line) => (
-                <tr key={line.id}>
+                <tr key={line.id} className="transition-colors hover:bg-ink-50">
                   <td className="px-5 py-3 font-medium text-ink-800">{line.name}</td>
                   <td className="px-5 py-3 text-ink-600">{line.line_type ?? "—"}</td>
                   <td className="px-5 py-3 text-ink-600">{line.capacity_per_hour ?? "—"}</td>

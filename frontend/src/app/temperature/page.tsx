@@ -176,7 +176,7 @@ function UnitLogsDialog({ unit, onClose }: { unit: TemperatureUnit; onClose: () 
           <tbody className="divide-y divide-ink-100">
             {isLoading && <TableSkeleton columns={3} />}
             {logs?.map((log) => (
-              <tr key={log.id}>
+              <tr key={log.id} className="transition-colors hover:bg-ink-50">
                 <td className="py-2 font-medium">{log.temperature}°C</td>
                 <td className="py-2"><StatusBadge status={log.within_limits ? "active" : "open"} /></td>
                 <td className="py-2 text-ink-500">{formatDateTime(log.recorded_at)}</td>
