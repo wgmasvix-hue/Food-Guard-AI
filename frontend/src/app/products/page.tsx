@@ -51,7 +51,7 @@ export default function ProductsPage() {
 
   return (
     <ProtectedShell title="Product Formulation">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-ink-500">
           Products and their versioned formulations — ingredient composition, cost, and allergen roll-up.
         </p>

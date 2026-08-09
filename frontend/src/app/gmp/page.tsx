@@ -76,7 +76,27 @@ export default function GmpPage() {
           <CardTitle>Inspection History</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          {/* Mobile card list */}
+          <div className="divide-y divide-ink-100 sm:hidden">
+            {loadingChecklists && <div className="py-6 text-center text-sm text-ink-400">Loading…</div>}
+            {checklists?.map((c) => (
+              <div key={c.id} className="flex items-start justify-between py-3">
+                <div>
+                  <StatusBadge status={c.status} />
+                  <p className="mt-1 text-xs text-ink-500">{formatDateTime(c.started_at)}</p>
+                  {c.score != null && <p className="text-xs text-ink-700">Score: {c.score}%</p>}
+                </div>
+                {c.status === "in_progress" && (
+                  <Button size="sm" variant="ghost" onClick={() => setActiveChecklist(c)}>Continue</Button>
+                )}
+              </div>
+            ))}
+            {checklists?.length === 0 && (
+              <p className="py-6 text-center text-sm text-ink-400">No inspections yet.</p>
+            )}
+          </div>
+          {/* Desktop table */}
+          <div className="hidden overflow-x-auto sm:block">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="text-xs uppercase text-ink-400">

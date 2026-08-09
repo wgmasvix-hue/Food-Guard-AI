@@ -64,14 +64,37 @@ export default function AuditsPage() {
 
   return (
     <ProtectedShell title="Audits">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-ink-500">Internal &amp; external audits, non-conformances, and CAPA.</p>
         <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" /> Schedule Audit</Button>
       </div>
 
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          {/* Mobile card list */}
+          <div className="divide-y divide-ink-100 sm:hidden">
+            {isLoading && <div className="px-4 py-6 text-center text-sm text-ink-400">Loading…</div>}
+            {audits?.map((a) => (
+              <button
+                key={a.id}
+                className="w-full px-4 py-3 text-left hover:bg-ink-50"
+                onClick={() => setSelectedId(a.id)}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-medium text-ink-800">{a.title}</p>
+                  <StatusBadge status={a.status} />
+                </div>
+                <p className="mt-1 text-xs capitalize text-ink-500">
+                  {a.audit_type}{a.standard ? ` · ${a.standard}` : ""} · {formatDate(a.scheduled_date)}
+                </p>
+              </button>
+            ))}
+            {audits?.length === 0 && (
+              <p className="px-4 py-6 text-center text-sm text-ink-400">No audits scheduled yet.</p>
+            )}
+          </div>
+          {/* Desktop table */}
+          <div className="hidden overflow-x-auto sm:block">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-ink-100 text-xs uppercase text-ink-400">

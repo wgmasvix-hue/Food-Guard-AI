@@ -74,7 +74,32 @@ export default function CorrectiveActionsPage() {
 
       <Card>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
+          {/* Mobile card list */}
+          <div className="divide-y divide-ink-100 sm:hidden">
+            {isLoading && <div className="px-4 py-6 text-center text-sm text-ink-400">Loading…</div>}
+            {cas?.map((ca) => (
+              <button
+                key={ca.id}
+                className="w-full px-4 py-3 text-left hover:bg-ink-50"
+                onClick={() => setSelected(ca)}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-medium text-ink-800">{ca.title}</p>
+                  <StatusBadge status={ca.status} />
+                </div>
+                <p className="mt-1 text-xs text-ink-500 capitalize">
+                  {ca.source ?? "manual"}{ca.deadline ? ` · Due ${formatDate(ca.deadline)}` : ""}
+                </p>
+              </button>
+            ))}
+            {cas?.length === 0 && (
+              <p className="px-4 py-6 text-center text-sm text-ink-400">
+                {statusFilter ? `No corrective actions with status "${statusFilter.replace(/_/g, " ")}".` : "No corrective actions yet."}
+              </p>
+            )}
+          </div>
+          {/* Desktop table */}
+          <div className="hidden overflow-x-auto sm:block">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-ink-100 text-xs uppercase text-ink-400">

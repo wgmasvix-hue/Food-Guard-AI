@@ -50,7 +50,7 @@ export default function TemperaturePage() {
 
   return (
     <ProtectedShell title="Temperature Monitoring">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-ink-500">Cold rooms, freezers, cooking, cooling, and hot holding — with automatic alerts.</p>
         <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4" /> New Unit</Button>
       </div>

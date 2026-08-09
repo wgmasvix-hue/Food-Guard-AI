@@ -45,6 +45,28 @@ body {
   @apply bg-ink-50 text-ink-900 antialiased;
 }
 
+/*
+ * Prevent iOS auto-zoom on form fields when the app is running in
+ * standalone (PWA / TWA) mode. Inputs inherit the base text-sm (14px)
+ * class, which is below the 16px threshold that triggers auto-zoom on iOS.
+ * We raise it only in standalone mode so desktop users aren't affected.
+ */
+@media (display-mode: standalone) {
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
+/*
+ * Safe-area insets for notched / home-bar devices in standalone PWA / TWA mode.
+ * Applied to specific layout slots rather than body so full-bleed backgrounds
+ * and fixed overlays continue to extend behind the safe zones.
+ */
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.safe-left { padding-left: env(safe-area-inset-left); }
+.safe-right { padding-right: env(safe-area-inset-right); }
+
 .scrollbar-thin::-webkit-scrollbar {
   width: 6px;
   height: 6px;
