@@ -42,7 +42,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
         onClick={onClose}
         className="absolute inset-0 bg-black/50 animate-fade-in"
       />
-      <div className="relative flex w-72 max-w-[80vw] flex-col bg-surface/90 shadow-soft-lg backdrop-blur-xl animate-fade-in">
+      <div className="safe-top relative flex w-72 max-w-[80vw] flex-col bg-surface/90 shadow-soft-lg backdrop-blur-xl animate-fade-in">
         <div className="flex items-center justify-between px-5 py-5">
           <BrandMark />
           <button
