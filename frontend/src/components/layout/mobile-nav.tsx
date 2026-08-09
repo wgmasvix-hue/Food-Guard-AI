@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Smartphone, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
@@ -8,6 +8,7 @@ import { useEffect } from "react";
 import { BrandMark } from "@/components/brand-mark";
 import { NAV_ITEMS } from "@/components/layout/nav-items";
 import { useAuth } from "@/lib/auth-context";
+import { ANDROID_APK_DOWNLOAD_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -71,6 +72,15 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
             );
           })}
         </nav>
+        <div className="px-3 pb-2">
+          <a
+            href={ANDROID_APK_DOWNLOAD_URL}
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-ink-600 hover:bg-ink-100 hover:text-ink-900"
+          >
+            <Smartphone className="h-4 w-4" />
+            Download Android App
+          </a>
+        </div>
         <div className="px-5 py-4 text-xs text-ink-400">© {new Date().getFullYear()} FoodOS</div>
       </div>
     </div>
