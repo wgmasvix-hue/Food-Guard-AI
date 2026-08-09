@@ -27,6 +27,7 @@ class SubscriptionPlan(Base, UUIDMixin, TimestampMixin):
     max_facilities: Mapped[int | None] = mapped_column(Integer)  # None = unlimited
     max_employees: Mapped[int | None] = mapped_column(Integer)
     ai_assistant_included: Mapped[bool] = mapped_column(Boolean, default=False)
+    ai_credits_per_month: Mapped[int | None] = mapped_column(Integer)  # None = unlimited; 0 = no AI access at all
     is_self_serve: Mapped[bool] = mapped_column(Boolean, default=True)  # False = sales-assisted ("Contact us")
     stripe_price_id: Mapped[str | None] = mapped_column(String(255))
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
@@ -49,6 +50,11 @@ class Subscription(Base, UUIDMixin, TimestampMixin):
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(255))
     current_period_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # AI usage credits, reset monthly by calendar month (independent of
+    # Stripe's billing period — the Free plan has no Stripe period at all).
+    ai_credits_used: Mapped[int] = mapped_column(Integer, default=0)
+    ai_credits_reset_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     company = relationship("Company", backref="subscription", uselist=False)
     plan: Mapped[SubscriptionPlan] = relationship(back_populates="subscriptions")

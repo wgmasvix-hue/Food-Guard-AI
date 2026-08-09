@@ -17,6 +17,7 @@ from app.schemas.billing import (
     SubscriptionRead,
 )
 from app.services.billing import get_billing_provider
+from app.services.billing.limits import ai_credits_remaining
 
 router = APIRouter()
 
@@ -48,7 +49,9 @@ def get_my_subscription(current_user: User = Depends(get_current_active_user), d
     sub = db.query(Subscription).filter(Subscription.company_id == current_user.company_id).first()
     if not sub:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No subscription on file")
-    return sub
+    data = SubscriptionRead.model_validate(sub)
+    data.ai_credits_remaining = ai_credits_remaining(db, current_user.company_id)
+    return data
 
 
 @router.post("/checkout", response_model=CheckoutSessionResponse)

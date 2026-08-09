@@ -16,7 +16,7 @@ from app.schemas.ai import (
 from app.services.ai import get_ai_provider
 from app.services.ai.company_context import build_company_context
 from app.services.ai.prompts import QA_SYSTEM_PROMPT, get_document_system_prompt
-from app.services.billing.limits import ai_assistant_allowed
+from app.services.billing.limits import check_ai_credits, consume_ai_credit
 
 MAX_HISTORY_MESSAGES = 12
 
@@ -41,17 +41,14 @@ async def generate_document(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    if not ai_assistant_allowed(db, current_user.company_id):
-        raise HTTPException(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            detail="The AI Assistant isn't included in your current plan. Upgrade to enable it.",
-        )
+    check_ai_credits(db, current_user.company_id)
     provider = get_ai_provider()
     system_prompt = get_document_system_prompt(payload.document_type)
     try:
         content = await provider.complete(system_prompt, payload.prompt)
     except Exception as exc:  # provider/network errors surface as a clean 503
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    consume_ai_credit(db, current_user.company_id)
 
     document_id = None
     if payload.save_as_document:
@@ -77,11 +74,7 @@ async def chat(
     current_user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
-    if not ai_assistant_allowed(db, current_user.company_id):
-        raise HTTPException(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            detail="The AI Assistant isn't included in your current plan. Upgrade to enable it.",
-        )
+    check_ai_credits(db, current_user.company_id)
     if payload.conversation_id:
         conversation = db.get(AIConversation, payload.conversation_id)
         if not conversation or conversation.user_id != current_user.id:
@@ -112,6 +105,7 @@ async def chat(
         reply = await provider.complete(QA_SYSTEM_PROMPT, user_prompt)
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+    consume_ai_credit(db, current_user.company_id)
 
     conversation.messages.append(AIMessage(role="assistant", content=reply))
     db.commit()

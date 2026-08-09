@@ -353,6 +353,7 @@ export interface SubscriptionPlan {
   max_facilities: number | null;
   max_employees: number | null;
   ai_assistant_included: boolean;
+  ai_credits_per_month: number | null;
   is_self_serve: boolean;
   sort_order: number;
 }
@@ -365,4 +366,5 @@ export interface Subscription {
   current_period_end: string | null;
   cancel_at_period_end: boolean;
   plan: SubscriptionPlan;
+  ai_credits_remaining: number | null;
 }

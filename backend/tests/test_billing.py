@@ -1,14 +1,20 @@
+import pytest
+from fastapi import HTTPException
+
 from app.models.billing import Subscription, SubscriptionPlan
+from app.services.billing.limits import ai_credits_remaining, check_ai_credits, consume_ai_credit
 
 
-def _seed_plans(db_session):
+def _seed_plans(db_session, free_credits=20):
     free = SubscriptionPlan(
         code="free", name="Free", price_cents=0, currency="usd", billing_interval="none",
-        max_facilities=1, max_employees=2, ai_assistant_included=False, is_self_serve=True, sort_order=0,
+        max_facilities=1, max_employees=2, ai_assistant_included=True, ai_credits_per_month=free_credits,
+        is_self_serve=True, sort_order=0,
     )
     pro = SubscriptionPlan(
         code="pro", name="Pro", price_cents=9900, currency="usd", billing_interval="month",
-        max_facilities=5, max_employees=100, ai_assistant_included=True, is_self_serve=True, sort_order=1,
+        max_facilities=5, max_employees=100, ai_assistant_included=True, ai_credits_per_month=None,
+        is_self_serve=True, sort_order=1,
     )
     db_session.add_all([free, pro])
     db_session.commit()
@@ -40,6 +46,7 @@ def test_registration_creates_free_subscription(client, db_session):
     data = resp.json()
     assert data["plan"]["code"] == "free"
     assert data["status"] == "active"
+    assert data["ai_credits_remaining"] == 20
 
 
 def test_subscription_404_without_seeded_plans(client):
@@ -82,26 +89,93 @@ def test_employee_limit_enforced_on_free_plan(client, db_session):
     assert resp.status_code == 402
 
 
-def test_ai_assistant_gated_on_free_plan(client, db_session):
+def test_ai_assistant_allowed_within_credits_falls_through_to_503(client, db_session):
     _seed_plans(db_session)
     auth = _register_and_login(client)
 
     resp = auth.post("/api/v1/ai/chat", json={"message": "hello"})
+    # Free plan has credits available, so this clears the plan gate and
+    # fails downstream instead — no AI backend is configured in tests, and
+    # a failed call doesn't consume a credit.
+    assert resp.status_code == 503
+
+
+def test_ai_credits_consumed_and_exhausted(client, db_session):
+    _seed_plans(db_session, free_credits=2)
+    auth = _register_and_login(client)
+    sub = db_session.query(Subscription).first()
+    company_id = sub.company_id
+
+    assert ai_credits_remaining(db_session, company_id) == 2
+    check_ai_credits(db_session, company_id)  # does not raise
+    consume_ai_credit(db_session, company_id)
+    assert ai_credits_remaining(db_session, company_id) == 1
+
+    check_ai_credits(db_session, company_id)  # still one left
+    consume_ai_credit(db_session, company_id)
+    assert ai_credits_remaining(db_session, company_id) == 0
+
+    with pytest.raises(HTTPException) as exc_info:
+        check_ai_credits(db_session, company_id)
+    assert exc_info.value.status_code == 402
+
+
+def test_ai_credits_gate_via_endpoint_once_exhausted(client, db_session):
+    _seed_plans(db_session, free_credits=1)
+    auth = _register_and_login(client)
+    sub = db_session.query(Subscription).first()
+    consume_ai_credit(db_session, sub.company_id)  # simulate the one credit already used
+
+    resp = auth.post("/api/v1/ai/chat", json={"message": "hello"})
     assert resp.status_code == 402
+    assert "credits" in resp.json()["detail"].lower()
 
 
-def test_ai_assistant_allowed_on_pro_plan_falls_through_to_503(client, db_session):
+def test_failed_ai_call_does_not_consume_a_credit(client, db_session):
+    _seed_plans(db_session, free_credits=1)
+    auth = _register_and_login(client)
+    sub = db_session.query(Subscription).first()
+    company_id = sub.company_id
+
+    resp = auth.post("/api/v1/ai/chat", json={"message": "hello"})
+    assert resp.status_code == 503  # no AI backend configured in tests
+    assert ai_credits_remaining(db_session, company_id) == 1  # unchanged — the call never succeeded
+
+
+def test_ai_credits_unlimited_on_pro_plan(client, db_session):
     plans = _seed_plans(db_session)
     auth = _register_and_login(client)
-
     sub = db_session.query(Subscription).first()
     sub.plan_id = plans["pro"].id
     db_session.commit()
 
-    resp = auth.post("/api/v1/ai/chat", json={"message": "hello"})
-    # Pro plan includes the AI Assistant, so this clears the plan gate and
-    # fails downstream instead — no AI backend is configured in tests.
-    assert resp.status_code == 503
+    assert ai_credits_remaining(db_session, sub.company_id) is None
+    for _ in range(50):
+        check_ai_credits(db_session, sub.company_id)  # never raises when unlimited
+        consume_ai_credit(db_session, sub.company_id)  # no-op when unlimited
+
+
+def test_ai_credits_reset_on_new_month(client, db_session):
+    from datetime import datetime, timezone
+
+    _seed_plans(db_session, free_credits=2)
+    auth = _register_and_login(client)
+    sub = db_session.query(Subscription).first()
+    company_id = sub.company_id
+
+    consume_ai_credit(db_session, company_id)
+    consume_ai_credit(db_session, company_id)
+    assert ai_credits_remaining(db_session, company_id) == 0
+
+    sub.ai_credits_reset_at = datetime(2020, 1, 1, tzinfo=timezone.utc)
+    db_session.commit()
+
+    # A stale reset date reads as a fresh period without needing a write...
+    assert ai_credits_remaining(db_session, company_id) == 2
+    # ...and actually gets persisted the next time a credit is consumed.
+    consume_ai_credit(db_session, company_id)
+    db_session.refresh(sub)
+    assert sub.ai_credits_used == 1
 
 
 def test_canceled_subscription_does_not_count_as_usable(client, db_session):

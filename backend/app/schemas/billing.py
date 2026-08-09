@@ -14,6 +14,7 @@ class SubscriptionPlanRead(TimestampedORMModel):
     max_facilities: int | None
     max_employees: int | None
     ai_assistant_included: bool
+    ai_credits_per_month: int | None
     is_self_serve: bool
     sort_order: int
 
@@ -25,6 +26,7 @@ class SubscriptionRead(TimestampedORMModel):
     current_period_end: datetime | None
     cancel_at_period_end: bool
     plan: SubscriptionPlanRead
+    ai_credits_remaining: int | None = None  # None = unlimited; computed, not a DB column
 
 
 class CheckoutSessionRequest(BaseModel):

@@ -160,6 +160,13 @@ function BillingCard() {
             {subscription.cancel_at_period_end && subscription.current_period_end && (
               <> Cancels on {new Date(subscription.current_period_end).toLocaleDateString()}.</>
             )}
+            {subscription.ai_credits_remaining !== null && (
+              <>
+                {" "}
+                <span className="font-semibold text-ink-900">{subscription.ai_credits_remaining}</span> AI credits
+                left this month.
+              </>
+            )}
           </p>
         )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -199,7 +206,8 @@ function BillingCard() {
                   {plan.ai_assistant_included && (
                     <li className="flex items-center gap-1.5">
                       <Check className="h-3.5 w-3.5 shrink-0 text-brand-600" />
-                      AI Assistant included
+                      AI Assistant —{" "}
+                      {plan.ai_credits_per_month === null ? "unlimited" : `${plan.ai_credits_per_month}/mo`}
                     </li>
                   )}
                 </ul>
