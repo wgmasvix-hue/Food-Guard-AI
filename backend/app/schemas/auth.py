@@ -9,7 +9,11 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     full_name: str = Field(min_length=1, max_length=255)
     company_name: str | None = Field(default=None, description="Creates a new company if provided")
-    role: UserRole = UserRole.COMPANY_ADMIN
+    # No client-supplied role: the register endpoint always assigns
+    # company_admin (new company) or operator (no company) itself. A
+    # self-registration endpoint must never let the caller pick their own
+    # privilege level — see /users for how roles get changed afterward,
+    # gated by require_min_role(COMPANY_ADMIN).
 
 
 class UserRead(TimestampedORMModel):

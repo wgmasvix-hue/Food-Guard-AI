@@ -15,6 +15,30 @@ def test_register_and_login(client):
     assert "access_token" in body and "refresh_token" in body
 
 
+def test_register_ignores_client_supplied_role(client):
+    """A caller must never be able to self-assign super_admin (or any role)
+    on public registration — role is always derived server-side."""
+    resp = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "attacker@evil.com", "password": "SuperSecret123",
+            "full_name": "Attacker", "company_name": "EvilCo", "role": "super_admin",
+        },
+    )
+    assert resp.status_code == 201
+    assert resp.json()["role"] == "company_admin"
+
+    resp = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "attacker2@evil.com", "password": "SuperSecret123",
+            "full_name": "Attacker2", "role": "super_admin",
+        },
+    )
+    assert resp.status_code == 201
+    assert resp.json()["role"] == "operator"
+
+
 def test_login_wrong_password(client, registered_user):
     resp = client.post("/api/v1/auth/login", json={"email": registered_user["email"], "password": "wrong"})
     assert resp.status_code == 401

@@ -31,16 +31,47 @@ All three are registered via `/etc/cron.d/food-guard-ai-ops` (and
 4. Deletes anything older than `BACKUP_RETENTION_DAYS` (`.env`, default 14).
 
 **These backups live on the same disk as the app.** A disk failure takes
-out the app and its backups together. Copy `$INSTALL_DIR/backups/`
-somewhere else on a schedule — e.g. a nightly cron running `rsync` to
-another host, or `rclone` to S3/Backblaze/etc. This repo doesn't set that
-up for you since it depends on storage you'd need to provision.
+out the app and its backups together — copy `$INSTALL_DIR/backups/`
+somewhere else on a schedule. See "Offsite backups" below for the
+built-in way to do that automatically.
 
 Run a backup on demand:
 
 ```bash
 sudo /usr/local/bin/food-guard-ai-backup.sh
 ```
+
+### Offsite backups
+
+`deploy/backup.sh` can push each night's dump + uploads tarball to any
+[rclone](https://rclone.org) remote (S3, Backblaze B2, Google Drive, SFTP,
+another server, ...) right after the local backup completes. It's opt-in
+and off by default — nothing changes until you configure it, and if the
+offsite push ever fails the local backup still succeeds (you get a
+warning in the log, not a failed backup job).
+
+To enable it:
+
+1. Install rclone on the server: `curl https://rclone.org/install.sh | sudo bash`
+2. Configure a remote interactively: `rclone config` (pick your provider,
+   follow the prompts — this stores credentials in
+   `~/.config/rclone/rclone.conf` for whichever user cron runs backups as,
+   typically root).
+3. Set `BACKUP_RCLONE_REMOTE` in `.env` to `<remote-name>:<path>`, e.g.:
+   ```bash
+   BACKUP_RCLONE_REMOTE=s3-backup:my-bucket/food-guard-ai
+   ```
+4. Run a backup manually once to confirm the sync works:
+   ```bash
+   sudo /usr/local/bin/food-guard-ai-backup.sh
+   ```
+   You should see `[backup] Syncing ... [backup] Offsite sync complete.`
+   in the output.
+
+From then on, every nightly backup also syncs to the remote
+(`rclone sync`, so deleted/pruned local files are reflected there too —
+the remote mirrors `$INSTALL_DIR/backups/`, it isn't a separate
+ever-growing archive).
 
 ### Restoring
 

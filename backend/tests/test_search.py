@@ -79,3 +79,32 @@ def test_search_is_scoped_to_own_company(client):
     resp = client.get("/api/v1/documents/search", params={"q": "confidential recipe"})
     assert resp.status_code == 200
     assert resp.json() == []
+
+
+def test_search_finds_text_extracted_from_uploaded_pdf(auth_client):
+    import io
+
+    from reportlab.pdfgen import canvas
+
+    create = auth_client.post(
+        "/api/v1/documents", json={"title": "Fryer Maintenance Manual", "category": "sop"}
+    )
+    document_id = create.json()["id"]
+
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf)
+    c.drawString(72, 720, "Deep clean the fryer oil filter every Tuesday.")
+    c.save()
+
+    resp = auth_client.post(
+        f"/api/v1/documents/{document_id}/versions",
+        files={"file": ("manual.pdf", buf.getvalue(), "application/pdf")},
+    )
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["content_type"] == "application/pdf"
+
+    search = auth_client.get("/api/v1/documents/search", params={"q": "fryer oil filter"})
+    assert search.status_code == 200
+    results = search.json()
+    assert len(results) == 1
+    assert results[0]["title"] == "Fryer Maintenance Manual"

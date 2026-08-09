@@ -10,6 +10,7 @@ from app.models.document import Document, DocumentVersion
 from app.models.user import User
 from app.schemas.document import DocumentCreate, DocumentRead, DocumentSearchResult, DocumentVersionRead
 from app.services.search import search_documents
+from app.services.text_extraction import extract_text
 
 router = APIRouter()
 
@@ -94,6 +95,11 @@ async def upload_version(
     with open(stored_path, "wb") as f:
         f.write(contents)
 
+    # Best-effort text extraction so this version is searchable by RAG
+    # (see app.services.search / app.services.text_extraction) — failures
+    # never block the upload, they just leave content_text empty.
+    content_text = extract_text(contents, file.content_type, file.filename)
+
     next_version = (max((v.version for v in document.versions), default=0)) + 1
     version = DocumentVersion(
         document_id=document.id,
@@ -103,6 +109,7 @@ async def upload_version(
         file_name=file.filename,
         content_type=file.content_type,
         size_bytes=len(contents),
+        content_text=content_text,
     )
     db.add(version)
     db.commit()

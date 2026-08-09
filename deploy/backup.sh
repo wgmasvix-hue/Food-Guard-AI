@@ -31,4 +31,26 @@ echo "[backup] Pruning backups older than ${RETENTION_DAYS} days..."
 find "$BACKUP_DIR" -type f \( -name 'db-*.dump' -o -name 'uploads-*.tar.gz' \) -mtime "+${RETENTION_DAYS}" -print -delete
 
 echo "[backup] Done: db-${STAMP}.dump, uploads-${STAMP}.tar.gz"
-echo "[backup] NOTE: these live on the same disk as the app. Copy $BACKUP_DIR offsite regularly (rsync/rclone/S3) — a disk failure would otherwise take out backups and app data together."
+
+# ---------- optional offsite copy ----------
+# Set BACKUP_RCLONE_REMOTE in .env (e.g. "s3-backup:my-bucket/food-guard-ai"
+# or "gdrive:backups/food-guard-ai") to also push backups to any rclone
+# remote (S3, Backblaze B2, Google Drive, SFTP, ...). Requires `rclone`
+# installed and configured (`rclone config`) — see docs/OPERATIONS.md.
+# Unset by default: a fresh install keeps working with local-only backups
+# and just prints the reminder below, it never fails the backup job.
+RCLONE_REMOTE="$(grep -E '^BACKUP_RCLONE_REMOTE=' .env 2>/dev/null | cut -d= -f2- || true)"
+if [[ -n "$RCLONE_REMOTE" ]]; then
+  if command -v rclone >/dev/null 2>&1; then
+    echo "[backup] Syncing $BACKUP_DIR to offsite remote $RCLONE_REMOTE ..."
+    if rclone sync "$BACKUP_DIR" "$RCLONE_REMOTE" --create-empty-src-dirs; then
+      echo "[backup] Offsite sync complete."
+    else
+      echo "[backup] WARNING: offsite sync to $RCLONE_REMOTE failed — local backups are still intact, but nothing left this disk. Check rclone config/credentials." >&2
+    fi
+  else
+    echo "[backup] WARNING: BACKUP_RCLONE_REMOTE is set but rclone is not installed — skipping offsite sync. Install with: curl https://rclone.org/install.sh | sudo bash" >&2
+  fi
+else
+  echo "[backup] NOTE: these live on the same disk as the app. Set BACKUP_RCLONE_REMOTE in .env to also copy them offsite automatically (rclone: S3/B2/Drive/SFTP/...) — a disk failure would otherwise take out backups and app data together. See docs/OPERATIONS.md."
+fi

@@ -60,7 +60,7 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
         email=payload.email,
         hashed_password=hash_password(payload.password),
         full_name=payload.full_name,
-        role=payload.role if company else UserRole.OPERATOR,
+        role=UserRole.COMPANY_ADMIN if company else UserRole.OPERATOR,
         company_id=company.id if company else None,
     )
     db.add(user)
