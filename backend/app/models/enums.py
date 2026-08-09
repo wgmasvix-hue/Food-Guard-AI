@@ -135,3 +135,10 @@ class FormulationStatus(StrEnum):
     DRAFT = "draft"
     ACTIVE = "active"
     ARCHIVED = "archived"
+
+
+class EcocashPaymentStatus(StrEnum):
+    PENDING = "pending"  # created, waiting for the customer to pay and submit a reference
+    SUBMITTED = "submitted"  # customer submitted a transaction reference, awaiting admin review
+    APPROVED = "approved"
+    REJECTED = "rejected"

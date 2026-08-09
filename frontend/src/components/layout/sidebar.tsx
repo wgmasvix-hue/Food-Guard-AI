@@ -6,11 +6,14 @@ import { usePathname } from "next/navigation";
 
 import { BrandMark } from "@/components/brand-mark";
 import { NAV_ITEMS } from "@/components/layout/nav-items";
+import { useAuth } from "@/lib/auth-context";
 import { ANDROID_APK_DOWNLOAD_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const visibleItems = NAV_ITEMS.filter((item) => !item.roles || (user && item.roles.includes(user.role)));
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col border-r border-ink-200/60 bg-surface/80 backdrop-blur-xl md:flex">
@@ -18,7 +21,7 @@ export function Sidebar() {
         <BrandMark />
       </div>
       <nav className="flex-1 space-y-1 px-3">
-        {NAV_ITEMS.map((item) => {
+        {visibleItems.map((item) => {
           const active = pathname === item.href || pathname?.startsWith(item.href + "/");
           const Icon = item.icon;
           return (

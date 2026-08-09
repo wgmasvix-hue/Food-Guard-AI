@@ -1,16 +1,22 @@
+import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.deps import get_current_active_user, get_db
-from app.core.rbac import require_min_role
-from app.models.billing import Subscription, SubscriptionPlan
-from app.models.enums import SubscriptionStatus, UserRole
+from app.core.rbac import require_min_role, require_roles
+from app.models.billing import EcocashPayment, Subscription, SubscriptionPlan
+from app.models.enums import EcocashPaymentStatus, SubscriptionStatus, UserRole
 from app.models.user import User
 from app.schemas.billing import (
     CheckoutSessionRequest,
     CheckoutSessionResponse,
+    EcocashConfirmRequest,
+    EcocashPaymentRead,
+    EcocashRejectRequest,
+    EcocashSubmitRequest,
     PortalSessionRequest,
     PortalSessionResponse,
     SubscriptionPlanRead,
@@ -104,6 +110,156 @@ async def create_portal(
         return PortalSessionResponse(message="Billing isn't configured on this deployment yet.")
     url = await provider.create_portal_session(stripe_customer_id=sub.stripe_customer_id, return_url=payload.return_url)
     return PortalSessionResponse(portal_url=url)
+
+
+@router.get("/ecocash/info")
+def ecocash_info():
+    """Static info the frontend needs to show payment instructions —
+    no auth required, nothing sensitive."""
+    return {
+        "merchant_number": settings.ECOCASH_MERCHANT_NUMBER,
+        "instructions": (
+            f"Send the plan's price to EcoCash number {settings.ECOCASH_MERCHANT_NUMBER}, "
+            "including your reference code in the payment note if EcoCash allows it. "
+            "Then submit your EcoCash transaction reference below for review."
+        ),
+    }
+
+
+@router.get("/ecocash/mine", response_model=list[EcocashPaymentRead])
+def list_my_ecocash_payments(current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    if not current_user.company_id:
+        return []
+    return (
+        db.query(EcocashPayment)
+        .filter(EcocashPayment.company_id == current_user.company_id)
+        .order_by(EcocashPayment.created_at.desc())
+        .all()
+    )
+
+
+@router.post("/ecocash/submit", response_model=EcocashPaymentRead, status_code=status.HTTP_201_CREATED)
+def submit_ecocash_payment(
+    payload: EcocashSubmitRequest,
+    current_user: User = Depends(require_min_role(UserRole.COMPANY_ADMIN)),
+    db: Session = Depends(get_db),
+):
+    """Step 1: the customer says which plan they want to pay for. We hand
+    back a unique reference code and payment instructions; no money has
+    moved yet — that happens out of band via the EcoCash app/USSD."""
+    if not current_user.company_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is not assigned to a company")
+    plan = (
+        db.query(SubscriptionPlan)
+        .filter(SubscriptionPlan.code == payload.plan_code, SubscriptionPlan.is_active.is_(True))
+        .first()
+    )
+    if not plan:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plan not found")
+    if not plan.is_self_serve:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="This plan is sales-assisted — contact us to set it up."
+        )
+
+    reference_code = f"FG-{uuid.uuid4().hex[:6].upper()}"
+    payment = EcocashPayment(
+        company_id=current_user.company_id,
+        plan_id=plan.id,
+        reference_code=reference_code,
+        amount_cents=plan.price_cents,
+        currency=plan.currency,
+        submitted_by_id=current_user.id,
+        status=EcocashPaymentStatus.PENDING,
+    )
+    db.add(payment)
+    db.commit()
+    db.refresh(payment)
+    return payment
+
+
+@router.post("/ecocash/{payment_id}/confirm", response_model=EcocashPaymentRead)
+def confirm_ecocash_payment(
+    payment_id: str,
+    payload: EcocashConfirmRequest,
+    current_user: User = Depends(require_min_role(UserRole.COMPANY_ADMIN)),
+    db: Session = Depends(get_db),
+):
+    """Step 2: the customer has actually paid and submits the EcoCash
+    transaction reference they got back, moving this into the admin
+    review queue."""
+    payment = db.get(EcocashPayment, payment_id)
+    if not payment or payment.company_id != current_user.company_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+    if payment.status != EcocashPaymentStatus.PENDING:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This payment has already been submitted for review.")
+
+    payment.transaction_reference = payload.transaction_reference
+    payment.payer_phone = payload.payer_phone
+    payment.status = EcocashPaymentStatus.SUBMITTED
+    db.commit()
+    db.refresh(payment)
+    return payment
+
+
+@router.get("/ecocash/pending", response_model=list[EcocashPaymentRead])
+def list_pending_ecocash_payments(
+    current_user: User = Depends(require_roles(UserRole.SUPER_ADMIN)), db: Session = Depends(get_db)
+):
+    return (
+        db.query(EcocashPayment)
+        .filter(EcocashPayment.status == EcocashPaymentStatus.SUBMITTED)
+        .order_by(EcocashPayment.created_at)
+        .all()
+    )
+
+
+@router.post("/ecocash/{payment_id}/approve", response_model=EcocashPaymentRead)
+def approve_ecocash_payment(
+    payment_id: str,
+    current_user: User = Depends(require_roles(UserRole.SUPER_ADMIN)),
+    db: Session = Depends(get_db),
+):
+    payment = db.get(EcocashPayment, payment_id)
+    if not payment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+    if payment.status != EcocashPaymentStatus.SUBMITTED:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This payment isn't awaiting review.")
+
+    payment.status = EcocashPaymentStatus.APPROVED
+    payment.reviewed_by_id = current_user.id
+    payment.reviewed_at = datetime.now(timezone.utc)
+
+    sub = db.query(Subscription).filter(Subscription.company_id == payment.company_id).first()
+    if sub:
+        sub.plan_id = payment.plan_id
+        sub.status = SubscriptionStatus.ACTIVE
+        sub.cancel_at_period_end = False
+
+    db.commit()
+    db.refresh(payment)
+    return payment
+
+
+@router.post("/ecocash/{payment_id}/reject", response_model=EcocashPaymentRead)
+def reject_ecocash_payment(
+    payment_id: str,
+    payload: EcocashRejectRequest,
+    current_user: User = Depends(require_roles(UserRole.SUPER_ADMIN)),
+    db: Session = Depends(get_db),
+):
+    payment = db.get(EcocashPayment, payment_id)
+    if not payment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Payment not found")
+    if payment.status != EcocashPaymentStatus.SUBMITTED:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This payment isn't awaiting review.")
+
+    payment.status = EcocashPaymentStatus.REJECTED
+    payment.reviewed_by_id = current_user.id
+    payment.reviewed_at = datetime.now(timezone.utc)
+    payment.review_notes = payload.reason
+    db.commit()
+    db.refresh(payment)
+    return payment
 
 
 @router.post("/webhook", include_in_schema=False)

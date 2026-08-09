@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Plus } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ProtectedShell } from "@/components/layout/protected-shell";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { useToast } from "@/lib/toast-context";
 import { api, apiErrorMessage } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
-import type { Company, Facility, ProductionLine, Subscription, SubscriptionPlan, User } from "@/lib/types";
+import type { Company, EcocashPayment, Facility, ProductionLine, Subscription, SubscriptionPlan, User } from "@/lib/types";
 import { cn, roleLabel } from "@/lib/utils";
 
 export default function SettingsPage() {
@@ -89,8 +89,10 @@ function formatPrice(cents: number, currency: string) {
 
 function BillingCard() {
   const toast = useToast();
+  const queryClient = useQueryClient();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [ecocashPlan, setEcocashPlan] = useState<SubscriptionPlan | null>(null);
 
   const { data: plans } = useQuery({
     queryKey: ["billing-plans"],
@@ -101,6 +103,16 @@ function BillingCard() {
     queryFn: async () => (await api.get<Subscription>("/billing/subscription")).data,
     retry: false,
   });
+  const { data: ecocashHistory } = useQuery({
+    queryKey: ["ecocash-mine"],
+    queryFn: async () => (await api.get<EcocashPayment[]>("/billing/ecocash/mine")).data,
+  });
+  const pendingEcocash = ecocashHistory?.find((p) => p.status === "pending" || p.status === "submitted");
+
+  function refreshEcocash() {
+    queryClient.invalidateQueries({ queryKey: ["ecocash-mine"] });
+    queryClient.invalidateQueries({ queryKey: ["billing-subscription"] });
+  }
 
   async function upgrade(plan: SubscriptionPlan) {
     setLoadingPlan(plan.code);
@@ -169,6 +181,13 @@ function BillingCard() {
             )}
           </p>
         )}
+        {pendingEcocash && (
+          <p className="mb-5 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            EcoCash payment for <span className="font-semibold">{pendingEcocash.plan.name}</span> (ref{" "}
+            <span className="font-mono">{pendingEcocash.reference_code}</span>) is{" "}
+            {pendingEcocash.status === "pending" ? "awaiting your confirmation" : "awaiting admin review"}.
+          </p>
+        )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {plans?.map((plan) => {
             const isCurrent = subscription?.plan.code === plan.code;
@@ -220,11 +239,20 @@ function BillingCard() {
                 >
                   {isCurrent ? "Current plan" : loadingPlan === plan.code ? "Loading…" : plan.is_self_serve ? "Upgrade" : "Contact us"}
                 </Button>
+                {!isCurrent && plan.is_self_serve && plan.price_cents > 0 && (
+                  <Button size="sm" variant="outline" className="mt-2" onClick={() => setEcocashPlan(plan)}>
+                    Pay via EcoCash
+                  </Button>
+                )}
               </div>
             );
           })}
         </div>
       </CardContent>
+
+      {ecocashPlan && (
+        <EcocashDialog plan={ecocashPlan} onClose={() => setEcocashPlan(null)} onSubmitted={refreshEcocash} />
+      )}
     </Card>
   );
 }
@@ -378,5 +406,120 @@ function ChangePasswordCard() {
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+function EcocashDialog({
+  plan,
+  onClose,
+  onSubmitted,
+}: {
+  plan: SubscriptionPlan;
+  onClose: () => void;
+  onSubmitted: () => void;
+}) {
+  const [merchantNumber, setMerchantNumber] = useState("");
+  const [payment, setPayment] = useState<EcocashPayment | null>(null);
+  const [txnRef, setTxnRef] = useState("");
+  const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.get("/billing/ecocash/info").then(({ data }) => setMerchantNumber(data.merchant_number));
+  }, []);
+
+  async function startPayment() {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data } = await api.post<EcocashPayment>("/billing/ecocash/submit", { plan_code: plan.code });
+      setPayment(data);
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function confirmPayment(e: React.FormEvent) {
+    e.preventDefault();
+    if (!payment) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await api.post(`/billing/ecocash/${payment.id}/confirm`, {
+        transaction_reference: txnRef,
+        payer_phone: phone || undefined,
+      });
+      setDone(true);
+      onSubmitted();
+    } catch (err) {
+      setError(apiErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const price = formatPrice(plan.price_cents, plan.currency) ?? `${plan.price_cents} ${plan.currency}`;
+
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      title={`Pay for ${plan.name} via EcoCash`}
+      description="Manual mobile money payment — reviewed by an admin before your plan activates."
+    >
+      {done ? (
+        <div className="space-y-4 text-sm text-ink-600">
+          <p>Submitted for review. Your plan will update here once an admin approves it.</p>
+          <Button onClick={onClose} className="w-full">Done</Button>
+        </div>
+      ) : !payment ? (
+        <div className="space-y-4">
+          <p className="text-sm text-ink-600">
+            You&apos;ll send <span className="font-semibold text-ink-900">{price}</span> to EcoCash number{" "}
+            <span className="font-mono font-semibold text-ink-900">{merchantNumber || "…"}</span>, then submit your
+            transaction reference here for review.
+          </p>
+          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button onClick={startPayment} disabled={loading}>{loading ? "Starting…" : "Get Reference Code"}</Button>
+          </div>
+        </div>
+      ) : (
+        <form onSubmit={confirmPayment} className="space-y-4">
+          <div className="rounded-lg bg-ink-50 p-3 text-sm">
+            <p>
+              Send <span className="font-semibold">{price}</span> to{" "}
+              <span className="font-mono font-semibold">{merchantNumber}</span>
+            </p>
+            <p className="mt-1">
+              Reference: <span className="font-mono font-semibold text-brand-700">{payment.reference_code}</span>
+            </p>
+          </div>
+          <div>
+            <Label>EcoCash transaction reference</Label>
+            <Input
+              required
+              value={txnRef}
+              onChange={(e) => setTxnRef(e.target.value)}
+              placeholder="e.g. MP240101.1234.A56789"
+            />
+          </div>
+          <div>
+            <Label>Phone you paid from (optional)</Label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="07xxxxxxxx" />
+          </div>
+          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit" disabled={loading}>{loading ? "Submitting…" : "Submit for Review"}</Button>
+          </div>
+        </form>
+      )}
+    </Dialog>
   );
 }

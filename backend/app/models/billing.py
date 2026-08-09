@@ -10,7 +10,7 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin
-from app.models.enums import SubscriptionStatus
+from app.models.enums import EcocashPaymentStatus, SubscriptionStatus
 
 
 class SubscriptionPlan(Base, UUIDMixin, TimestampMixin):
@@ -65,3 +65,33 @@ class Subscription(Base, UUIDMixin, TimestampMixin):
         trialing subscriptions do, even if cancel_at_period_end is set (they
         keep access until the period actually ends)."""
         return self.status in (SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING)
+
+
+class EcocashPayment(Base, UUIDMixin, TimestampMixin):
+    """A manually-reconciled EcoCash payment claim: the customer is shown a
+    reference code and the merchant's EcoCash number, pays out of band via
+    the EcoCash app/USSD, then submits the transaction reference they got
+    back. A Super Admin reviews and approves/rejects it, which activates
+    the target plan on approval. There is no EcoCash API integration here
+    — this is a manual reconciliation flow, the standard pattern for
+    mobile-money payments without a merchant API integration."""
+
+    __tablename__ = "ecocash_payments"
+
+    company_id: Mapped[str] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), index=True, nullable=False)
+    plan_id: Mapped[str] = mapped_column(ForeignKey("subscription_plans.id", ondelete="RESTRICT"), nullable=False)
+    reference_code: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    amount_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    currency: Mapped[str] = mapped_column(String(10), default="usd")
+    payer_phone: Mapped[str | None] = mapped_column(String(30))
+    transaction_reference: Mapped[str | None] = mapped_column(String(100))  # customer-submitted EcoCash confirmation
+    status: Mapped[EcocashPaymentStatus] = mapped_column(String(20), default=EcocashPaymentStatus.PENDING)
+    submitted_by_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    reviewed_by_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_notes: Mapped[str | None] = mapped_column(String(500))
+
+    company = relationship("Company")
+    plan: Mapped[SubscriptionPlan] = relationship()
+    submitted_by = relationship("User", foreign_keys=[submitted_by_id])
+    reviewed_by = relationship("User", foreign_keys=[reviewed_by_id])

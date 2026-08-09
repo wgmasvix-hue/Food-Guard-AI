@@ -1,4 +1,5 @@
 import {
+  Banknote,
   Bot,
   ClipboardCheck,
   FileText,
@@ -11,10 +12,13 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import type { UserRole } from "@/lib/types";
+
 export interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  roles?: UserRole[]; // omit for "everyone"
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -27,5 +31,6 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/audits", label: "Audits", icon: ClipboardCheck },
   { href: "/documents", label: "Documents", icon: FileText },
   { href: "/ai-assistant", label: "AI Assistant", icon: Bot },
+  { href: "/admin/ecocash", label: "EcoCash Payments", icon: Banknote, roles: ["super_admin"] },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

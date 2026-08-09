@@ -3,7 +3,7 @@ from app.models.ai import AIConversation, AIMessage
 from app.models.attachment import Attachment
 from app.models.audit import Audit, AuditFinding
 from app.models.audit_template import AuditAIAnalysis, AuditChecklistItem, AuditTemplate, AuditTemplateItem
-from app.models.billing import Subscription, SubscriptionPlan
+from app.models.billing import EcocashPayment, Subscription, SubscriptionPlan
 from app.models.company import Company, Department, Facility, ProductionLine
 from app.models.corrective_action import CorrectiveAction
 from app.models.document import Document, DocumentVersion
@@ -16,6 +16,7 @@ from app.models.enums import (
     CCPStatus,
     ChecklistStatus,
     DocumentCategory,
+    EcocashPaymentStatus,
     FormulationStatus,
     GMPCategory,
     HazardType,
@@ -42,7 +43,8 @@ __all__ = [
     "AuditChecklistItemResult", "AuditFinding", "AuditTemplate", "AuditTemplateItem", "Batch", "CCP",
     "CAStatus", "CCPStatus", "Checklist", "ChecklistItem", "ChecklistStatus", "ChecklistTemplate",
     "ChecklistTemplateItem", "Company", "CorrectiveAction", "Department", "DigitalSignature", "Document",
-    "DocumentCategory", "DocumentVersion", "Employee", "Facility", "FormulationItem", "FormulationStatus",
+    "DocumentCategory", "DocumentVersion", "EcocashPayment", "EcocashPaymentStatus", "Employee", "Facility",
+    "FormulationItem", "FormulationStatus",
     "GMPCategory",
     "HaccpPlan", "HaccpReview", "Hazard", "HazardType", "Ingredient", "MonitoringRecord",
     "Notification", "NotificationLevel", "Product", "ProductFormulation", "ProductionLine",

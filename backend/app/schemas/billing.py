@@ -47,3 +47,32 @@ class PortalSessionRequest(BaseModel):
 class PortalSessionResponse(BaseModel):
     portal_url: str | None = None
     message: str | None = None
+
+
+class EcocashSubmitRequest(BaseModel):
+    plan_code: str
+
+
+class EcocashConfirmRequest(BaseModel):
+    transaction_reference: str
+    payer_phone: str | None = None
+
+
+class EcocashRejectRequest(BaseModel):
+    reason: str | None = None
+
+
+class EcocashPaymentRead(TimestampedORMModel):
+    company_id: str
+    plan_id: str
+    reference_code: str
+    amount_cents: int
+    currency: str
+    payer_phone: str | None = None
+    transaction_reference: str | None = None
+    status: str
+    submitted_by_id: str | None = None
+    reviewed_by_id: str | None = None
+    reviewed_at: datetime | None = None
+    review_notes: str | None = None
+    plan: SubscriptionPlanRead

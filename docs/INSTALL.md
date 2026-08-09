@@ -94,6 +94,16 @@ With `STRIPE_SECRET_KEY` unset (the default), the billing UI still works — pla
 
 `app.services.billing.base.BillingProvider` is the same kind of swappable interface as the AI provider — a different payment processor could replace `StripeBillingProvider` without touching the endpoints or plan-gating logic in `app.services.billing.limits`.
 
+### EcoCash (manual mobile-money payments)
+
+There's no public EcoCash API for arbitrary developers to auto-receive payments, so this is a manual reconciliation flow rather than an automated one, offered alongside Stripe:
+
+1. On a plan card in **Settings → Billing**, a customer clicks **Pay via EcoCash**, which creates a pending `EcocashPayment` row and shows them `ECOCASH_MERCHANT_NUMBER` (`.env`, defaults to `0784457922`) plus a unique reference code.
+2. They pay that amount to that number out of band (EcoCash app / USSD), then submit the transaction reference EcoCash gives them back into the same dialog.
+3. Any **Super Admin** account sees it queued under **EcoCash Payments** in the sidebar (`/admin/ecocash`, also `GET /billing/ecocash/pending`) and approves or rejects it. Approving immediately activates that plan on the customer's subscription; rejecting leaves their current plan untouched.
+
+There's no verification beyond what the admin manually checks (e.g. against the real EcoCash merchant SMS/statement) — this is intentionally a human-in-the-loop flow, not automated payment processing. If you later get a Paynow (paynow.co.zw) merchant account, EcoCash payments there could be automated the same way Stripe is, through the same `BillingProvider` interface.
+
 ## 4. Local Development (without Docker)
 
 ### Backend

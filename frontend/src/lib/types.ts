@@ -376,6 +376,24 @@ export interface Subscription {
   ai_credits_remaining: number | null;
 }
 
+export interface EcocashPayment {
+  id: string;
+  created_at: string;
+  company_id: string;
+  plan_id: string;
+  reference_code: string;
+  amount_cents: number;
+  currency: string;
+  payer_phone: string | null;
+  transaction_reference: string | null;
+  status: "pending" | "submitted" | "approved" | "rejected";
+  submitted_by_id: string | null;
+  reviewed_by_id: string | null;
+  reviewed_at: string | null;
+  review_notes: string | null;
+  plan: SubscriptionPlan;
+}
+
 export interface Product {
   id: string;
   company_id: string;

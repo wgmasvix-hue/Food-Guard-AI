@@ -52,6 +52,12 @@ class Settings(BaseSettings):
     STRIPE_PUBLISHABLE_KEY: str = ""
     STRIPE_WEBHOOK_SECRET: str = ""
 
+    # EcoCash: manually-reconciled mobile money payments (no API integration
+    # exists for this) — customers pay this number out of band, then submit
+    # a transaction reference for a Super Admin to approve. See
+    # app.api.v1.endpoints.billing's /ecocash/* routes.
+    ECOCASH_MERCHANT_NUMBER: str = "0784457922"
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def _use_psycopg_driver(cls, v):
