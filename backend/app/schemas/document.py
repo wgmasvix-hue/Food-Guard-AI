@@ -39,3 +39,10 @@ class DocumentRead(TimestampedORMModel):
     expires_on: date | None = None
     is_archived: bool
     versions: list[DocumentVersionRead] = []
+
+
+class DocumentSearchResult(BaseModel):
+    document_id: str
+    title: str
+    category: str
+    snippet: str

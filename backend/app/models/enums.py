@@ -129,3 +129,9 @@ class SubscriptionStatus(StrEnum):
     PAST_DUE = "past_due"
     CANCELED = "canceled"
     INCOMPLETE = "incomplete"
+
+
+class FormulationStatus(StrEnum):
+    DRAFT = "draft"
+    ACTIVE = "active"
+    ARCHIVED = "archived"

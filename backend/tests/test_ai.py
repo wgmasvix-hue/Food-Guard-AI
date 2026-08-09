@@ -45,3 +45,19 @@ def test_company_context_routes_on_keyword_not_just_fallback(auth_client, db_ses
 def test_chat_endpoint_503s_without_ai_backend_configured(auth_client):
     resp = auth_client.post("/api/v1/ai/chat", json={"message": "What are our open corrective actions?"})
     assert resp.status_code == 503
+
+
+def test_company_context_includes_retrieved_document_excerpts(auth_client, db_session):
+    company_id = _company_id(auth_client)
+    auth_client.post(
+        "/api/v1/documents",
+        json={
+            "title": "Cold Room Cleaning SOP",
+            "category": "sop",
+            "content_text": "Wipe down all cold room shelving with sanitizer solution weekly.",
+        },
+    )
+
+    context = build_company_context(db_session, company_id, "what's our cold room cleaning sanitizer procedure?")
+    assert "Cold Room Cleaning SOP" in context
+    assert "Relevant excerpts from your documents" in context

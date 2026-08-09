@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, Plus } from "lucide-react";
+import { FileText, Plus, Search, X } from "lucide-react";
 import { useState } from "react";
 
 import { ProtectedShell } from "@/components/layout/protected-shell";
@@ -15,7 +15,7 @@ import { CardGridSkeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { api, apiErrorMessage } from "@/lib/api-client";
 import { useToast } from "@/lib/toast-context";
-import type { FGDocument } from "@/lib/types";
+import type { DocumentSearchResult, FGDocument } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 
 const CATEGORIES = [
@@ -31,6 +31,8 @@ export default function DocumentsPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ title: "", category: "sop", description: "" });
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: documents, isLoading } = useQuery({
     queryKey: ["documents", categoryFilter],
@@ -40,6 +42,13 @@ export default function DocumentsPage() {
           params: categoryFilter ? { category: categoryFilter } : undefined,
         })
       ).data,
+    enabled: !searchQuery,
+  });
+
+  const { data: searchResults, isFetching: searching } = useQuery({
+    queryKey: ["documents-search", searchQuery],
+    queryFn: async () => (await api.get<DocumentSearchResult[]>("/documents/search", { params: { q: searchQuery } })).data,
+    enabled: !!searchQuery,
   });
 
   async function createDocument(e: React.FormEvent) {
@@ -71,7 +80,54 @@ export default function DocumentsPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      <form
+        className="relative mb-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          setSearchQuery(searchInput.trim());
+        }}
+      >
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+        <Input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search document content — e.g. &quot;cold room cleaning&quot;"
+          className="pl-9 pr-9"
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => {
+              setSearchInput("");
+              setSearchQuery("");
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-700"
+            aria-label="Clear search"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </form>
+
+      {searchQuery ? (
+        <div className="space-y-3">
+          {searching && <p className="text-sm text-ink-400">Searching…</p>}
+          {!searching && searchResults?.length === 0 && (
+            <p className="text-sm text-ink-500">No documents match &quot;{searchQuery}&quot;.</p>
+          )}
+          {searchResults?.map((r) => (
+            <Card key={r.document_id}>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <p className="font-medium text-ink-900">{r.title}</p>
+                  <span className="text-xs capitalize text-ink-400">{r.category.replace(/_/g, " ")}</span>
+                </div>
+                <p className="mt-1 text-sm text-ink-600">{r.snippet}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : isLoading ? (
         <CardGridSkeleton count={6} />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

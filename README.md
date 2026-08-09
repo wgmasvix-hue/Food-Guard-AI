@@ -20,8 +20,10 @@ FoodOS replaces paper-based HACCP and GMP records with a secure, intelligent, cl
 | **Temperature** | Cold rooms, freezers, refrigerators, cooking, cooling, hot holding — automatic out-of-limit alerts |
 | **Corrective Actions** | Issue → root cause → CA/PA → responsible person → deadline → evidence → verification |
 | **Audits** | Internal/external audits, non-conformances, CAPA, scheduling, history |
-| **Documents** | SOPs, policies, certificates, specs, supplier docs, training records — with version control |
-| **AI Assistant** | Ollama-powered generation of HACCP plans, SOPs, cleaning procedures, policies, training material, risk assessments + free-form Q&A |
+| **Documents** | SOPs, policies, certificates, specs, supplier docs, training records — with version control and full-text search |
+| **Product Formulation** | Versioned recipes per product — ingredient % composition, cost-per-batch, allergen roll-up, approval workflow |
+| **AI Assistant** | Ollama-powered generation of HACCP plans, SOPs, cleaning procedures, policies, training material, risk assessments + free-form Q&A grounded in your own live data and documents (RAG) |
+| **Billing** | Free/Pro/Enterprise subscription tiers (Stripe), with monthly AI usage credits on every plan |
 | **Reports** | PDF reports: temperature logs, inspections, HACCP monitoring, corrective actions, audits, compliance summary |
 
 ## Technology Stack

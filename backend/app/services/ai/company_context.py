@@ -21,6 +21,7 @@ from app.models.enums import CAStatus
 from app.models.gmp import Checklist
 from app.models.haccp import HaccpPlan
 from app.models.temperature import TemperatureLog, TemperatureUnit
+from app.services.search import search_documents
 
 MAX_ROWS = 8
 RECENT_DAYS = 7
@@ -106,6 +107,18 @@ def _audit_summary(db: Session, company_id: str) -> str:
     return f"Audits ({len(rows)} shown, most recent first):\n" + "\n".join(lines)
 
 
+def _document_search_results(db: Session, company_id: str, message: str) -> str | None:
+    """The actual retrieval step of retrieval-augmented generation: search
+    the company's own documents (SOPs, policies, HACCP plans, etc.) for
+    whatever the user just asked, so the model can cite real excerpts
+    instead of guessing at content it's never seen."""
+    results = search_documents(db, company_id, message, limit=3)
+    if not results:
+        return None
+    lines = [f'- "{r.title}" ({r.category}): {r.snippet}' for r in results]
+    return "Relevant excerpts from your documents:\n" + "\n".join(lines)
+
+
 # Keyword -> section-builder routing. A message can match more than one.
 _ROUTES: list[tuple[tuple[str, ...], callable]] = [
     (("temperature", "temp ", "cold room", "freezer", "fridge", "chiller"), _recent_temperature_excursions),
@@ -133,5 +146,9 @@ def build_company_context(db: Session, company_id: str | None, message: str) -> 
             _recent_temperature_excursions(db, company_id),
             _audit_summary(db, company_id),
         ]
+
+    doc_section = _document_search_results(db, company_id, message)
+    if doc_section:
+        sections.append(doc_section)
 
     return "\n\n".join(sections)

@@ -3,14 +3,20 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_active_user, get_db
 from app.core.rbac import require_min_role
-from app.models.enums import UserRole
-from app.models.product import Batch, Product
+from app.models.enums import FormulationStatus, UserRole
+from app.models.product import Batch, FormulationItem, Product, ProductFormulation
 from app.models.supplier import Supplier
 from app.models.user import User
 from app.schemas.product import (
     BatchCreate,
     BatchRead,
+    FormulationItemCreate,
+    FormulationItemRead,
+    FormulationItemUpdate,
     ProductCreate,
+    ProductFormulationCreate,
+    ProductFormulationRead,
+    ProductFormulationUpdate,
     ProductRead,
     SupplierCreate,
     SupplierRead,
@@ -73,6 +79,168 @@ def create_batch(
     db.commit()
     db.refresh(batch)
     return batch
+
+
+# --- Formulations ---
+
+def _get_product_or_404(db: Session, product_id: str, company_id: str) -> Product:
+    product = db.get(Product, product_id)
+    if not product or product.company_id != company_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    return product
+
+
+def _get_formulation_or_404(db: Session, product_id: str, formulation_id: str, company_id: str) -> ProductFormulation:
+    _get_product_or_404(db, product_id, company_id)
+    formulation = db.get(ProductFormulation, formulation_id)
+    if not formulation or formulation.product_id != product_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Formulation not found")
+    return formulation
+
+
+@router.get("/{product_id}/formulations", response_model=list[ProductFormulationRead])
+def list_formulations(
+    product_id: str, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)
+):
+    _get_product_or_404(db, product_id, current_user.company_id)
+    return (
+        db.query(ProductFormulation)
+        .filter(ProductFormulation.product_id == product_id)
+        .order_by(ProductFormulation.version.desc())
+        .all()
+    )
+
+
+@router.get("/{product_id}/formulations/{formulation_id}", response_model=ProductFormulationRead)
+def get_formulation(
+    product_id: str,
+    formulation_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    return _get_formulation_or_404(db, product_id, formulation_id, current_user.company_id)
+
+
+@router.post(
+    "/{product_id}/formulations", response_model=ProductFormulationRead, status_code=status.HTTP_201_CREATED
+)
+def create_formulation(
+    product_id: str,
+    payload: ProductFormulationCreate,
+    current_user: User = Depends(require_min_role(UserRole.PRODUCTION_SUPERVISOR)),
+    db: Session = Depends(get_db),
+):
+    _get_product_or_404(db, product_id, current_user.company_id)
+    latest_version = (
+        db.query(ProductFormulation.version)
+        .filter(ProductFormulation.product_id == product_id)
+        .order_by(ProductFormulation.version.desc())
+        .first()
+    )
+    next_version = (latest_version[0] + 1) if latest_version else 1
+
+    formulation = ProductFormulation(
+        product_id=product_id,
+        version=next_version,
+        created_by_id=current_user.id,
+        batch_size=payload.batch_size,
+        batch_size_unit=payload.batch_size_unit,
+        notes=payload.notes,
+    )
+    db.add(formulation)
+    db.flush()
+    for item in payload.items:
+        formulation.items.append(FormulationItem(**item.model_dump()))
+    db.commit()
+    db.refresh(formulation)
+    return formulation
+
+
+@router.patch("/{product_id}/formulations/{formulation_id}", response_model=ProductFormulationRead)
+def update_formulation(
+    product_id: str,
+    formulation_id: str,
+    payload: ProductFormulationUpdate,
+    current_user: User = Depends(require_min_role(UserRole.PRODUCTION_SUPERVISOR)),
+    db: Session = Depends(get_db),
+):
+    formulation = _get_formulation_or_404(db, product_id, formulation_id, current_user.company_id)
+    data = payload.model_dump(exclude_unset=True)
+    new_status = data.get("status")
+    for field, value in data.items():
+        setattr(formulation, field, value)
+
+    if new_status == FormulationStatus.ACTIVE:
+        # Only one version is "active" for a product at a time.
+        db.query(ProductFormulation).filter(
+            ProductFormulation.product_id == product_id,
+            ProductFormulation.id != formulation.id,
+            ProductFormulation.status == FormulationStatus.ACTIVE,
+        ).update({"status": FormulationStatus.ARCHIVED})
+        from datetime import datetime, timezone
+
+        formulation.approved_by_id = current_user.id
+        formulation.approved_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(formulation)
+    return formulation
+
+
+@router.post(
+    "/{product_id}/formulations/{formulation_id}/items",
+    response_model=FormulationItemRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_formulation_item(
+    product_id: str,
+    formulation_id: str,
+    payload: FormulationItemCreate,
+    current_user: User = Depends(require_min_role(UserRole.PRODUCTION_SUPERVISOR)),
+    db: Session = Depends(get_db),
+):
+    formulation = _get_formulation_or_404(db, product_id, formulation_id, current_user.company_id)
+    item = FormulationItem(formulation_id=formulation.id, **payload.model_dump())
+    db.add(item)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.patch("/{product_id}/formulations/{formulation_id}/items/{item_id}", response_model=FormulationItemRead)
+def update_formulation_item(
+    product_id: str,
+    formulation_id: str,
+    item_id: str,
+    payload: FormulationItemUpdate,
+    current_user: User = Depends(require_min_role(UserRole.PRODUCTION_SUPERVISOR)),
+    db: Session = Depends(get_db),
+):
+    _get_formulation_or_404(db, product_id, formulation_id, current_user.company_id)
+    item = db.get(FormulationItem, item_id)
+    if not item or item.formulation_id != formulation_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Formulation item not found")
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(item, field, value)
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+@router.delete("/{product_id}/formulations/{formulation_id}/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_formulation_item(
+    product_id: str,
+    formulation_id: str,
+    item_id: str,
+    current_user: User = Depends(require_min_role(UserRole.PRODUCTION_SUPERVISOR)),
+    db: Session = Depends(get_db),
+):
+    _get_formulation_or_404(db, product_id, formulation_id, current_user.company_id)
+    item = db.get(FormulationItem, item_id)
+    if not item or item.formulation_id != formulation_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Formulation item not found")
+    db.delete(item)
+    db.commit()
 
 
 # --- Suppliers ---

@@ -16,6 +16,7 @@ from app.models.enums import (
     CCPStatus,
     ChecklistStatus,
     DocumentCategory,
+    FormulationStatus,
     GMPCategory,
     HazardType,
     NotificationLevel,
@@ -29,7 +30,7 @@ from app.models.enums import (
 from app.models.gmp import Checklist, ChecklistItem, ChecklistTemplate, ChecklistTemplateItem
 from app.models.haccp import CCP, HaccpPlan, HaccpReview, Hazard, MonitoringRecord
 from app.models.notification import Notification
-from app.models.product import Batch, Ingredient, Product
+from app.models.product import Batch, FormulationItem, Ingredient, Product, ProductFormulation
 from app.models.signature import DigitalSignature
 from app.models.supplier import Supplier
 from app.models.system_log import SystemLog
@@ -41,9 +42,11 @@ __all__ = [
     "AuditChecklistItemResult", "AuditFinding", "AuditTemplate", "AuditTemplateItem", "Batch", "CCP",
     "CAStatus", "CCPStatus", "Checklist", "ChecklistItem", "ChecklistStatus", "ChecklistTemplate",
     "ChecklistTemplateItem", "Company", "CorrectiveAction", "Department", "DigitalSignature", "Document",
-    "DocumentCategory", "DocumentVersion", "Employee", "Facility", "GMPCategory",
+    "DocumentCategory", "DocumentVersion", "Employee", "Facility", "FormulationItem", "FormulationStatus",
+    "GMPCategory",
     "HaccpPlan", "HaccpReview", "Hazard", "HazardType", "Ingredient", "MonitoringRecord",
-    "Notification", "NotificationLevel", "Product", "ProductionLine", "ProductionLineStatus", "RiskLevel",
+    "Notification", "NotificationLevel", "Product", "ProductFormulation", "ProductionLine",
+    "ProductionLineStatus", "RiskLevel",
     "SignatureMeaning", "Subscription", "SubscriptionPlan", "SubscriptionStatus", "Supplier", "SystemLog",
     "TemperatureLog", "TemperatureUnit", "TemperatureUnitType", "User", "UserRole",
     "AuditStatus", "AuditType",

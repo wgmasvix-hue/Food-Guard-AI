@@ -308,6 +308,13 @@ export interface FGDocument {
   versions: DocumentVersion[];
 }
 
+export interface DocumentSearchResult {
+  document_id: string;
+  title: string;
+  category: string;
+  snippet: string;
+}
+
 export interface DashboardSummary {
   compliance_score: number;
   open_corrective_actions: number;
@@ -367,4 +374,48 @@ export interface Subscription {
   cancel_at_period_end: boolean;
   plan: SubscriptionPlan;
   ai_credits_remaining: number | null;
+}
+
+export interface Product {
+  id: string;
+  company_id: string;
+  name: string;
+  sku?: string | null;
+  category?: string | null;
+  description?: string | null;
+  allergens?: string | null;
+  shelf_life_days?: number | null;
+  storage_conditions?: string | null;
+  intended_use?: string | null;
+  is_active: boolean;
+}
+
+export interface FormulationItem {
+  id: string;
+  formulation_id: string;
+  supplier_id?: string | null;
+  name: string;
+  percentage?: number | null;
+  quantity?: number | null;
+  unit?: string | null;
+  unit_cost?: number | null;
+  is_allergen: boolean;
+  notes?: string | null;
+}
+
+export interface ProductFormulation {
+  id: string;
+  product_id: string;
+  version: number;
+  status: "draft" | "active" | "archived";
+  batch_size?: number | null;
+  batch_size_unit?: string | null;
+  notes?: string | null;
+  created_by_id?: string | null;
+  approved_by_id?: string | null;
+  approved_at?: string | null;
+  items: FormulationItem[];
+  total_percentage: number;
+  total_cost: number;
+  allergens: string[];
 }

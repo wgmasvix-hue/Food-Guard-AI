@@ -8,7 +8,8 @@ from app.core.config import settings
 from app.core.deps import get_current_active_user, get_db
 from app.models.document import Document, DocumentVersion
 from app.models.user import User
-from app.schemas.document import DocumentCreate, DocumentRead, DocumentVersionRead
+from app.schemas.document import DocumentCreate, DocumentRead, DocumentSearchResult, DocumentVersionRead
+from app.services.search import search_documents
 
 router = APIRouter()
 
@@ -32,6 +33,21 @@ def list_documents(
     if category:
         query = query.filter(Document.category == category)
     return query.order_by(Document.title).all()
+
+
+@router.get("/search", response_model=list[DocumentSearchResult])
+def search(
+    q: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """Free-text search over this company's documents — full-text ranked
+    search on Postgres, a portable keyword fallback elsewhere. Available
+    on every plan; the AI Assistant also uses this internally to ground
+    chat answers in retrieved document content (Pro-gated there via AI
+    credits, not here)."""
+    results = search_documents(db, current_user.company_id, q)
+    return [DocumentSearchResult(document_id=r.document_id, title=r.title, category=r.category, snippet=r.snippet) for r in results]
 
 
 @router.post("", response_model=DocumentRead, status_code=status.HTTP_201_CREATED)
