@@ -13,6 +13,7 @@ from app.api.v1.endpoints import (
     gmp,
     haccp,
     notifications,
+    onboarding,
     products,
     reports,
     signatures,
@@ -40,3 +41,4 @@ api_router.include_router(signatures.router, prefix="/signatures", tags=["Digita
 api_router.include_router(attachments.router, prefix="/attachments", tags=["Attachments"])
 api_router.include_router(billing.router, prefix="/billing", tags=["Billing"])
 api_router.include_router(traceability.router, prefix="/traceability", tags=["Traceability"])
+api_router.include_router(onboarding.router, prefix="/onboarding", tags=["Onboarding"])

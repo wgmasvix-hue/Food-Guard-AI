@@ -137,6 +137,17 @@ export interface HaccpPlan {
   next_review_date?: string | null;
 }
 
+export interface OnboardingStatus {
+  needs_onboarding: boolean;
+}
+
+export interface OnboardingSetupResponse {
+  haccp_plan_id: string;
+  document_id?: string | null;
+  ai_generated: boolean;
+  message: string;
+}
+
 export interface Hazard {
   id: string;
   plan_id: string;

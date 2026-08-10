@@ -3,23 +3,26 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
+  ArrowRight,
   Bot,
   CalendarClock,
   CheckCircle2,
   ClipboardList,
   Gauge,
   ListChecks,
+  Sparkles,
   Thermometer,
 } from "lucide-react";
 import Link from "next/link";
 
 import { ProtectedShell } from "@/components/layout/protected-shell";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
-import type { DashboardSummary } from "@/lib/types";
+import type { DashboardSummary, OnboardingStatus } from "@/lib/types";
 import { formatDate, formatDateTime } from "@/lib/utils";
 
 function greeting() {
@@ -99,9 +102,34 @@ export default function DashboardPage() {
     queryKey: ["dashboard-summary"],
     queryFn: async () => (await api.get<DashboardSummary>("/dashboard/summary")).data,
   });
+  const { data: onboarding } = useQuery({
+    queryKey: ["onboarding-status"],
+    queryFn: async () => (await api.get<OnboardingStatus>("/onboarding/status")).data,
+  });
 
   return (
     <ProtectedShell title="Dashboard">
+      {onboarding?.needs_onboarding && (
+        <Link href="/onboarding" className="mb-6 block">
+          <Card className="card-hover border-brand-200/70 bg-gradient-to-r from-brand-50 to-transparent">
+            <CardContent className="flex items-center justify-between gap-4 py-5">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-brand-700">
+                  <Sparkles className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="font-medium text-ink-900">Get started with a starter HACCP plan</p>
+                  <p className="text-sm text-ink-500">Tell us your industry — the AI Assistant drafts a starting point for you.</p>
+                </div>
+              </div>
+              <Button size="sm" variant="outline" className="shrink-0">
+                Start <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </CardContent>
+          </Card>
+        </Link>
+      )}
+
       {isLoading || !data ? (
         <DashboardSkeleton />
       ) : (

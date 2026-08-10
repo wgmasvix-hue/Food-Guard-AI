@@ -27,6 +27,7 @@ FoodOS replaces paper-based HACCP and GMP records with a secure, intelligent, cl
 | **AI Assistant** | Ollama-powered generation of HACCP plans, SOPs, cleaning procedures, policies, training material, risk assessments + free-form Q&A grounded in your own live data and documents (RAG) |
 | **Billing** | Free/Pro/Enterprise subscription tiers (Stripe or EcoCash), with monthly AI usage credits on every plan |
 | **Alerts** | In-app notifications + optional WhatsApp (Twilio) for temperature excursions and overdue corrective actions |
+| **Onboarding** | Guided first-run setup — pick your industry, describe your process, get a starter HACCP plan with an AI-drafted document |
 | **Reports** | PDF reports: temperature logs, inspections, HACCP monitoring, corrective actions, audits, compliance summary |
 
 ## Technology Stack
