@@ -1,4 +1,5 @@
 import { CheckCircle2, Smartphone } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { BrandMark } from "@/components/brand-mark";
@@ -53,10 +54,15 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           style={{ animationDelay: "0.2s" }}
         >
           <span>Powered by ChengetAi Labs</span>
-          <a href={ANDROID_APK_DOWNLOAD_URL} className="flex items-center gap-1.5 hover:text-slate-200">
-            <Smartphone className="h-3.5 w-3.5" />
-            Android App
-          </a>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="hover:text-slate-200">
+              Privacy
+            </Link>
+            <a href={ANDROID_APK_DOWNLOAD_URL} className="flex items-center gap-1.5 hover:text-slate-200">
+              <Smartphone className="h-3.5 w-3.5" />
+              Android App
+            </a>
+          </div>
         </div>
       </div>
 
@@ -70,12 +76,15 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           {children}
         </div>
 
-        <div className="flex items-center gap-4 text-xs text-ink-400 lg:hidden">
-          <a href={ANDROID_APK_DOWNLOAD_URL} className="flex items-center gap-1.5 hover:text-ink-600">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-ink-400">
+          <a href={ANDROID_APK_DOWNLOAD_URL} className="flex items-center gap-1.5 hover:text-ink-600 lg:hidden">
             <Smartphone className="h-3.5 w-3.5" />
             Download Android App
           </a>
-          <span>Powered by ChengetAi Labs</span>
+          <Link href="/privacy" className="hover:text-ink-600">
+            Privacy Policy
+          </Link>
+          <span className="lg:hidden">Powered by ChengetAi Labs</span>
         </div>
       </div>
     </div>

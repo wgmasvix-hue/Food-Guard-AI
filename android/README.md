@@ -69,3 +69,52 @@ npm i -g @bubblewrap/cli
 cd android
 bubblewrap build
 ```
+
+## Publishing to the Google Play Store
+
+The CI build also produces a signed `.aab` (Android App Bundle) —
+Bubblewrap generates one alongside the `.apk` automatically. It's
+uploaded as a private workflow artifact named
+`food-guard-ai-android-bundle` (Actions tab → the run → Artifacts),
+**not** published to the public GitHub Release like the `.apk` — Play
+Console is the only place the `.aab` should go.
+
+Steps (each only needs doing once per new listing):
+
+1. **Create a Google Play Developer account** — [play.google.com/console](https://play.google.com/console/signup),
+   one-time $25 registration fee. Only the account owner can do this.
+2. **Create the app** in Play Console → set the app name (`FoodOS`),
+   default language, app/game = App, free/paid = Free (billing happens
+   in-app via Stripe/EcoCash, not through Play Billing).
+3. **Upload the `.aab`** under Production (or Internal testing first,
+   recommended) → Create new release. Play App Signing will offer to
+   manage your app signing key — accept it (Google re-signs releases
+   with its own key derived from your upload key; the upload key here
+   is the same `android.keystore` used for the `.apk`).
+4. **Privacy Policy URL**: `https://foodguard.chengetailabs.co.zw/privacy`
+   (required — the app handles user accounts and company data).
+5. **Data safety form**: declare what's collected — account info (name,
+   email, phone), and the food-safety records the company itself enters
+   (HACCP/GMP/audit/temperature/document data). None of it is sold or
+   shared with third parties; all of it is deletable via account/company
+   deletion. See `docs/OPERATIONS.md` for the actual data model if you
+   need exact field-level detail for the form.
+6. **Store listing assets needed**: app icon (512×512, already have —
+   `frontend/public/icons/icon-512.png`), a feature graphic (1024×500,
+   not yet created), and 2–8 phone screenshots (not yet created — this
+   sandboxed agent environment's network policy blocks reaching the
+   live custom domain directly, so these need to come from a real
+   device/browser: log into the live site or installed app and take a
+   few screenshots of Dashboard, HACCP, and the AI Assistant).
+7. **Content rating questionnaire**: answer as a business/productivity
+   utility app with no user-generated public content, no ads, no
+   in-app purchases processed through Google — should land in the
+   lowest rating tier.
+8. Submit for review. First review is typically 1–7 days.
+
+Package ID is `com.chengetailabs.foodos` (renamed from the pre-rebrand
+`ai.foodguard.twa` before any Play Store submission — Google doesn't
+allow changing it after the first upload, so this was done early
+deliberately). If you ever regenerate the signing keystore, recompute
+its fingerprint and update `frontend/public/.well-known/assetlinks.json`
+to match, then redeploy the web app.

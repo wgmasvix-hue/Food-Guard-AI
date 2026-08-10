@@ -68,6 +68,32 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+      # Bubblewrap's build also produces a signed .aab alongside the .apk
+      # (same signing key, same version) — that's the format Google Play
+      # requires for the Play Console listing. The .apk above stays the
+      # public sideload/GitHub-Release download; the .aab is upload-only
+      # so it's kept as a private workflow artifact for whoever manages
+      # the Play Console listing to download and upload there.
+      - name: Locate build output (AAB)
+        id: find_aab
+        run: |
+          AAB_PATH="$(find . -maxdepth 3 -iname '*.aab' | head -n1 | sed 's|^\./||')"
+          if [ -z "$AAB_PATH" ]; then
+            echo "::warning::No .aab found after build — Bubblewrap version may differ; Play Store upload will need one built manually (bubblewrap build produces it by default)." >&2
+          else
+            echo "aab_path=$AAB_PATH" >> "$GITHUB_OUTPUT"
+            cp "$AAB_PATH" FoodGuardAI.aab
+          fi
+
+      - name: Upload AAB artifact (for Play Console upload)
+        if: steps.find_aab.outputs.aab_path != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: food-guard-ai-android-bundle
+          path: android/FoodGuardAI.aab
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Publish GitHub Release (stable download link)
         uses: softprops/action-gh-release@v2
         with:
