@@ -18,16 +18,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/ui/badge";
 import { DashboardSkeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api-client";
+import { useAuth } from "@/lib/auth-context";
 import type { DashboardSummary } from "@/lib/types";
 import { formatDate, formatDateTime } from "@/lib/utils";
 
+function greeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
 function ScoreRing({ score }: { score: number }) {
-  const color = score >= 90 ? "text-brand-600" : score >= 75 ? "text-amber-500" : "text-red-500";
+  const color = score >= 90 ? "#16a34a" : score >= 75 ? "#f59e0b" : "#ef4444";
   const circumference = 2 * Math.PI * 42;
   const offset = circumference - (score / 100) * circumference;
   return (
     <div className="relative flex h-32 w-32 items-center justify-center">
       <svg className="h-32 w-32 -rotate-90">
+        <defs>
+          <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={color} stopOpacity={0.6} />
+            <stop offset="100%" stopColor={color} />
+          </linearGradient>
+        </defs>
         <circle cx="64" cy="64" r="42" strokeWidth="10" className="stroke-ink-100" fill="none" />
         <circle
           cx="64"
@@ -35,11 +49,11 @@ function ScoreRing({ score }: { score: number }) {
           r="42"
           strokeWidth="10"
           strokeLinecap="round"
-          className={color}
-          stroke="currentColor"
+          stroke="url(#scoreGradient)"
           fill="none"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
+          className="transition-[stroke-dashoffset] duration-700 ease-out"
         />
       </svg>
       <span className="absolute text-2xl font-bold text-ink-900">{score}%</span>
@@ -58,12 +72,16 @@ function StatTile({
   value: number | string;
   tone?: "default" | "warning" | "danger";
 }) {
-  const toneClasses =
-    tone === "danger" ? "text-red-600 bg-red-50" : tone === "warning" ? "text-amber-600 bg-amber-50" : "text-brand-700 bg-brand-50";
+  const gradient =
+    tone === "danger"
+      ? "from-red-400 to-red-600"
+      : tone === "warning"
+        ? "from-amber-400 to-amber-600"
+        : "from-brand-400 to-brand-600";
   return (
-    <Card>
+    <Card className="card-hover">
       <CardContent className="flex items-center gap-4">
-        <span className={`flex h-11 w-11 items-center justify-center rounded-lg ${toneClasses}`}>
+        <span className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-soft ${gradient}`}>
           <Icon className="h-5 w-5" />
         </span>
         <div>
@@ -76,6 +94,7 @@ function StatTile({
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard-summary"],
     queryFn: async () => (await api.get<DashboardSummary>("/dashboard/summary")).data,
@@ -86,9 +105,18 @@ export default function DashboardPage() {
       {isLoading || !data ? (
         <DashboardSkeleton />
       ) : (
-        <div className="space-y-6">
+        <div className="animate-fade-in-up space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-ink-900">
+              {greeting()}{user?.full_name ? `, ${user.full_name.split(" ")[0]}` : ""} 👋
+            </h2>
+            <p className="mt-0.5 text-sm text-ink-500">
+              {formatDate(new Date().toISOString())} · Here&apos;s where things stand today.
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <Card className="md:col-span-1">
+            <Card>
               <CardContent className="flex flex-col items-center justify-center gap-2 py-6">
                 <ScoreRing score={data.compliance_score} />
                 <p className="text-sm font-medium text-ink-600">Compliance Score</p>

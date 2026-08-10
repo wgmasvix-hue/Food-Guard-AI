@@ -79,7 +79,7 @@ export default function ProductsPage() {
           )}
           {products?.map((product) => (
             <Link key={product.id} href={`/products/${product.id}`}>
-              <Card className="h-full transition-shadow hover:shadow-soft-lg">
+              <Card className="card-hover h-full">
                 <CardContent>
                   <div className="mb-2 flex items-start justify-between">
                     <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-50 text-brand-700">

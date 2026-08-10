@@ -60,3 +60,26 @@ body {
 .animate-fade-in {
   animation: fade-in 0.15s ease-out;
 }
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes orb-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(3%, -4%) scale(1.08); }
+  66% { transform: translate(-3%, 3%) scale(0.96); }
+}
+.animate-orb-drift {
+  animation: orb-drift 18s ease-in-out infinite;
+}
+
+/* Consistent lift-on-hover for clickable cards (list/grid tiles) —
+   apply alongside Card instead of the ad hoc hover:shadow-md pattern. */
+.card-hover {
+  @apply transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-soft-lg;
+}

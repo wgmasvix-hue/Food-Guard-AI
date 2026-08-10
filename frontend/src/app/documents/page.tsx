@@ -148,7 +148,7 @@ export default function DocumentsPage() {
           )}
           {documents?.map((doc) => (
             <button key={doc.id} onClick={() => setSelected(doc)} className="text-left">
-              <Card className="h-full transition-shadow hover:shadow-md">
+              <Card className="card-hover h-full">
                 <CardContent>
                   <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-ink-100 text-ink-700">
                     <FileText className="h-4 w-4" />

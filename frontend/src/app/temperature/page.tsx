@@ -72,7 +72,7 @@ export default function TemperaturePage() {
           )}
           {units?.map((unit) => (
             <button key={unit.id} onClick={() => setSelectedUnit(unit)} className="text-left">
-              <Card className="h-full transition-shadow hover:shadow-md">
+              <Card className="card-hover h-full">
                 <CardContent>
                   <div className="mb-2 flex items-start justify-between">
                     <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
