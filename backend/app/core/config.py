@@ -58,6 +58,15 @@ class Settings(BaseSettings):
     # app.api.v1.endpoints.billing's /ecocash/* routes.
     ECOCASH_MERCHANT_NUMBER: str = "0784457922"
 
+    # WhatsApp alerts are optional: with these unset, alerts (overdue
+    # corrective actions, temperature excursions) still land as in-app
+    # Notification rows, they just don't also go out over WhatsApp. Uses
+    # Twilio's WhatsApp API — see app.services.whatsapp and
+    # docs/INSTALL.md "WhatsApp alerts".
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_WHATSAPP_FROM: str = ""  # e.g. "whatsapp:+14155238886"
+
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
     def _use_psycopg_driver(cls, v):

@@ -315,6 +315,18 @@ export interface DocumentSearchResult {
   snippet: string;
 }
 
+export interface Notification {
+  id: string;
+  user_id: string;
+  level: "info" | "warning" | "critical";
+  title: string;
+  message: string;
+  link?: string | null;
+  is_read: boolean;
+  read_at?: string | null;
+  created_at: string;
+}
+
 export interface DashboardSummary {
   compliance_score: number;
   open_corrective_actions: number;
@@ -338,16 +350,6 @@ export interface AIConversation {
   id: string;
   title: string;
   messages: AIMessage[];
-}
-
-export interface Notification {
-  id: string;
-  level: string;
-  title: string;
-  message: string;
-  link?: string | null;
-  is_read: boolean;
-  created_at: string;
 }
 
 export interface SubscriptionPlan {

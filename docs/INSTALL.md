@@ -104,6 +104,19 @@ There's no public EcoCash API for arbitrary developers to auto-receive payments,
 
 There's no verification beyond what the admin manually checks (e.g. against the real EcoCash merchant SMS/statement) — this is intentionally a human-in-the-loop flow, not automated payment processing. If you later get a Paynow (paynow.co.zw) merchant account, EcoCash payments there could be automated the same way Stripe is, through the same `BillingProvider` interface.
 
+## 3c. WhatsApp alerts
+
+Two kinds of compliance alert exist — a temperature reading outside a unit's limits (raised immediately when the reading is recorded), and a corrective action that's passed its deadline still open (checked hourly by a cron job, see `deploy/check-overdue.sh`). Both always create an in-app `Notification` row for the company's `company_admin`/`qa_manager`/`food_safety_officer` users (visible via `GET /notifications`); with Twilio configured, the same alert also goes out over WhatsApp to anyone among them with a phone number set.
+
+With `TWILIO_ACCOUNT_SID` unset (the default), alerts stay in-app only — nothing breaks, WhatsApp sends are just skipped. To enable it:
+
+1. Create a [Twilio](https://www.twilio.com) account and set up [WhatsApp messaging](https://www.twilio.com/docs/whatsapp) — the sandbox number works for testing; a production deployment needs an approved WhatsApp Business sender.
+2. Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_WHATSAPP_FROM` (e.g. `whatsapp:+14155238886`) in `.env`.
+3. Redeploy so the API picks up the new env vars.
+4. Each user who should receive WhatsApp alerts needs a phone number on file — a `company_admin` sets this per team member in **Settings → Team Members** (click a row), including their own.
+
+`app.services.whatsapp.base.WhatsAppProvider` is the same kind of swappable interface as the AI/billing providers — a different WhatsApp API could replace `TwilioWhatsAppProvider` without touching `app.services.alerts` or the endpoints that raise alerts.
+
 ## 4. Local Development (without Docker)
 
 ### Backend

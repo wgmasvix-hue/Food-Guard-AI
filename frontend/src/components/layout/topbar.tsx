@@ -3,6 +3,7 @@
 import { LogOut, Menu, Moon, Sun, User as UserIcon } from "lucide-react";
 import { useState } from "react";
 
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { useAuth } from "@/lib/auth-context";
 import { useTheme } from "@/lib/theme-context";
 import { roleLabel } from "@/lib/utils";
@@ -26,6 +27,8 @@ export function Topbar({ title, onMenuClick }: { title: string; onMenuClick: () 
       </div>
 
       <div className="flex shrink-0 items-center gap-2">
+        <NotificationBell />
+
         <button
           onClick={toggleTheme}
           className="rounded-md p-2 text-ink-500 hover:bg-ink-100 hover:text-ink-900"

@@ -21,8 +21,13 @@ import { useAuth } from "@/lib/auth-context";
 import type { Company, EcocashPayment, Facility, ProductionLine, Subscription, SubscriptionPlan, User } from "@/lib/types";
 import { cn, roleLabel } from "@/lib/utils";
 
+const EDITABLE_ROLES = ["company_admin", "super_admin"];
+
 export default function SettingsPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  const canEditUsers = !!user && EDITABLE_ROLES.includes(user.role);
 
   const { data: company } = useQuery({
     queryKey: ["company-me"],
@@ -33,6 +38,26 @@ export default function SettingsPage() {
     queryKey: ["users"],
     queryFn: async () => (await api.get<User[]>("/users")).data,
   });
+
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [phoneDraft, setPhoneDraft] = useState("");
+  const [savingPhone, setSavingPhone] = useState(false);
+
+  async function saveUserPhone(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingUser) return;
+    setSavingPhone(true);
+    try {
+      await api.patch(`/users/${editingUser.id}`, { phone: phoneDraft || null });
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      setEditingUser(null);
+      toast.success("Phone number updated.");
+    } catch (err) {
+      toast.error(apiErrorMessage(err));
+    } finally {
+      setSavingPhone(false);
+    }
+  }
 
   return (
     <ProtectedShell title="Settings">
@@ -50,7 +75,10 @@ export default function SettingsPage() {
       </div>
 
       <Card className="mt-6">
-        <CardHeader><CardTitle>Team Members</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Team Members</CardTitle>
+          {canEditUsers && <p className="text-xs text-ink-400">Click a row to set a phone number for WhatsApp alerts.</p>}
+        </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -58,25 +86,60 @@ export default function SettingsPage() {
                 <tr className="border-b border-ink-100 text-xs uppercase text-ink-400">
                   <th className="px-5 py-3">Name</th>
                   <th className="px-5 py-3">Email</th>
+                  <th className="px-5 py-3">Phone</th>
                   <th className="px-5 py-3">Role</th>
                   <th className="px-5 py-3">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ink-100">
                 {users?.map((u) => (
-                  <tr key={u.id} className="transition-colors hover:bg-ink-50">
+                  <tr
+                    key={u.id}
+                    className={cn("transition-colors hover:bg-ink-50", canEditUsers && "cursor-pointer")}
+                    onClick={() => {
+                      if (!canEditUsers) return;
+                      setEditingUser(u);
+                      setPhoneDraft(u.phone ?? "");
+                    }}
+                  >
                     <td className="px-5 py-3 font-medium text-ink-800">{u.full_name}</td>
                     <td className="px-5 py-3 text-ink-600">{u.email}</td>
+                    <td className="px-5 py-3 text-ink-600">{u.phone || "—"}</td>
                     <td className="px-5 py-3 text-ink-600">{roleLabel(u.role)}</td>
                     <td className="px-5 py-3"><StatusBadge status={u.is_active ? "active" : "inactive"} /></td>
                   </tr>
                 ))}
-                {users?.length === 0 && <EmptyTableRow colSpan={4} icon={Users} title="No team members yet" />}
+                {users?.length === 0 && <EmptyTableRow colSpan={5} icon={Users} title="No team members yet" />}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
+
+      {editingUser && (
+        <Dialog
+          open
+          onClose={() => setEditingUser(null)}
+          title={editingUser.full_name}
+          description="Set a WhatsApp-reachable phone number to receive compliance alerts (overdue corrective actions, temperature excursions)."
+        >
+          <form onSubmit={saveUserPhone} className="space-y-4">
+            <div>
+              <Label>Phone number</Label>
+              <Input
+                value={phoneDraft}
+                onChange={(e) => setPhoneDraft(e.target.value)}
+                placeholder="+263771234567"
+              />
+              <p className="mt-1 text-xs text-ink-400">Include the country code, e.g. +263 for Zimbabwe.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setEditingUser(null)}>Cancel</Button>
+              <Button type="submit" disabled={savingPhone}>{savingPhone ? "Saving…" : "Save"}</Button>
+            </div>
+          </form>
+        </Dialog>
+      )}
 
       <BillingCard />
       <ProductionLinesCard />

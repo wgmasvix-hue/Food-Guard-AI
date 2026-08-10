@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_current_active_user, get_db
 from app.core.rbac import require_min_role
 from app.models.corrective_action import CorrectiveAction
-from app.models.enums import CAStatus, UserRole
+from app.models.enums import CAStatus, NotificationLevel, UserRole
 from app.models.temperature import TemperatureLog, TemperatureUnit
 from app.models.user import User
 from app.schemas.temperature import (
@@ -16,6 +16,7 @@ from app.schemas.temperature import (
     TemperatureUnitRead,
     TemperatureUnitUpdate,
 )
+from app.services.alerts import notify_company
 
 router = APIRouter()
 
@@ -119,6 +120,18 @@ def record_log(
         db.add(ca)
         db.flush()
         log.corrective_action_id = ca.id
+
+        notify_company(
+            db,
+            company_id=current_user.company_id,
+            level=NotificationLevel.CRITICAL,
+            title=f"Temperature alert: {unit.name}",
+            message=(
+                f"{payload.temperature}°C recorded, outside limits "
+                f"({unit.min_temp}°C–{unit.max_temp}°C). Corrective action opened automatically."
+            ),
+            link="/temperature",
+        )
 
     db.commit()
     db.refresh(log)

@@ -168,14 +168,17 @@ log "Reloading Caddy..."
 docker exec "$CADDY_CONTAINER" caddy reload --config "$CADDYFILE_CONTAINER_PATH" --adapter caddyfile
 
 # ---------- backups + health monitoring ----------
-log "Installing nightly backups (02:30) and health-check alerts (every 5 min)..."
+log "Installing nightly backups (02:30), health-check alerts (every 5 min), and overdue corrective-action checks (hourly)..."
 install -m 755 deploy/backup.sh /usr/local/bin/food-guard-ai-backup.sh
 sed -i "s#__INSTALL_DIR__#${INSTALL_DIR}#g" /usr/local/bin/food-guard-ai-backup.sh
 install -m 755 deploy/healthcheck-alert.sh /usr/local/bin/food-guard-ai-healthcheck.sh
 sed -i "s#__INSTALL_DIR__#${INSTALL_DIR}#g" /usr/local/bin/food-guard-ai-healthcheck.sh
+install -m 755 deploy/check-overdue.sh /usr/local/bin/food-guard-ai-check-overdue.sh
+sed -i "s#__INSTALL_DIR__#${INSTALL_DIR}#g" /usr/local/bin/food-guard-ai-check-overdue.sh
 cat > /etc/cron.d/food-guard-ai-ops <<EOF
 30 2 * * * root /usr/local/bin/food-guard-ai-backup.sh >> /var/log/food-guard-ai-backup.log 2>&1
 */5 * * * * root /usr/local/bin/food-guard-ai-healthcheck.sh >> /var/log/food-guard-ai-healthcheck.log 2>&1
+0 * * * * root /usr/local/bin/food-guard-ai-check-overdue.sh >> /var/log/food-guard-ai-check-overdue.log 2>&1
 EOF
 
 # ---------- seed demo data ----------
