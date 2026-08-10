@@ -4,12 +4,15 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_current_active_user, get_db
 from app.core.rbac import require_min_role
 from app.models.enums import FormulationStatus, UserRole
-from app.models.product import Batch, FormulationItem, Product, ProductFormulation
+from app.models.product import Batch, BatchLotUsage, FormulationItem, Product, ProductFormulation, RawMaterialLot
 from app.models.supplier import Supplier
 from app.models.user import User
 from app.schemas.product import (
     BatchCreate,
+    BatchLotUsageCreate,
+    BatchLotUsageRead,
     BatchRead,
+    BatchUpdate,
     FormulationItemCreate,
     FormulationItemRead,
     FormulationItemUpdate,
@@ -79,6 +82,72 @@ def create_batch(
     db.commit()
     db.refresh(batch)
     return batch
+
+
+def _get_batch_or_404(db: Session, product_id: str, batch_id: str, company_id: str) -> Batch:
+    product = db.get(Product, product_id)
+    if not product or product.company_id != company_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
+    batch = db.get(Batch, batch_id)
+    if not batch or batch.product_id != product_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Batch not found")
+    return batch
+
+
+@router.patch("/{product_id}/batches/{batch_id}", response_model=BatchRead)
+def update_batch(
+    product_id: str,
+    batch_id: str,
+    payload: BatchUpdate,
+    current_user: User = Depends(require_min_role(UserRole.PRODUCTION_SUPERVISOR)),
+    db: Session = Depends(get_db),
+):
+    """Move a batch through its lifecycle (in_production -> released, or
+    -> on_hold/recalled). Recalling requires a reason so there's a record
+    of why, for the audit trail this exists to support."""
+    batch = _get_batch_or_404(db, product_id, batch_id, current_user.company_id)
+    data = payload.model_dump(exclude_unset=True)
+    if data.get("status") == "recalled" and not data.get("recall_reason") and not batch.recall_reason:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="recall_reason is required to mark a batch recalled")
+    for field, value in data.items():
+        setattr(batch, field, value)
+    db.commit()
+    db.refresh(batch)
+    return batch
+
+
+@router.get("/{product_id}/batches/{batch_id}/lots", response_model=list[BatchLotUsageRead])
+def list_batch_lots(
+    product_id: str,
+    batch_id: str,
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    """The raw material lots recorded as consumed in this batch — the
+    backward half of a recall trace ("what went into this batch?")."""
+    batch = _get_batch_or_404(db, product_id, batch_id, current_user.company_id)
+    return db.query(BatchLotUsage).filter(BatchLotUsage.batch_id == batch.id).all()
+
+
+@router.post("/{product_id}/batches/{batch_id}/lots", response_model=BatchLotUsageRead, status_code=status.HTTP_201_CREATED)
+def record_batch_lot_usage(
+    product_id: str,
+    batch_id: str,
+    payload: BatchLotUsageCreate,
+    current_user: User = Depends(require_min_role(UserRole.PRODUCTION_SUPERVISOR)),
+    db: Session = Depends(get_db),
+):
+    """Record that this batch consumed (some quantity of) a given raw
+    material lot. Call once per lot used in the batch."""
+    batch = _get_batch_or_404(db, product_id, batch_id, current_user.company_id)
+    lot = db.get(RawMaterialLot, payload.raw_material_lot_id)
+    if not lot or lot.company_id != current_user.company_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Raw material lot not found")
+    usage = BatchLotUsage(batch_id=batch.id, raw_material_lot_id=lot.id, quantity_used=payload.quantity_used, unit=payload.unit)
+    db.add(usage)
+    db.commit()
+    db.refresh(usage)
+    return usage
 
 
 # --- Formulations ---

@@ -22,6 +22,8 @@ FoodOS replaces paper-based HACCP and GMP records with a secure, intelligent, cl
 | **Audits** | Internal/external audits, non-conformances, CAPA, scheduling, history |
 | **Documents** | SOPs, policies, certificates, specs, supplier docs, training records — with version control and full-text search |
 | **Product Formulation** | Versioned recipes per product — ingredient % composition, cost-per-batch, allergen roll-up, approval workflow |
+| **Suppliers** | Approved supplier list, certifications with expiry tracking, risk ratings, approval workflow |
+| **Traceability** | Raw material lot tracking, production batch records, two-way recall trace (lot → affected batches, batch → lots used) |
 | **AI Assistant** | Ollama-powered generation of HACCP plans, SOPs, cleaning procedures, policies, training material, risk assessments + free-form Q&A grounded in your own live data and documents (RAG) |
 | **Billing** | Free/Pro/Enterprise subscription tiers (Stripe), with monthly AI usage credits on every plan |
 | **Reports** | PDF reports: temperature logs, inspections, HACCP monitoring, corrective actions, audits, compliance summary |

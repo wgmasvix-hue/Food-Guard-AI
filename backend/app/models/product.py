@@ -4,7 +4,7 @@ from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, Stri
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin, UUIDMixin
-from app.models.enums import FormulationStatus
+from app.models.enums import BatchStatus, FormulationStatus, LotStatus
 
 
 class Product(Base, UUIDMixin, TimestampMixin):
@@ -53,9 +53,54 @@ class Batch(Base, UUIDMixin, TimestampMixin):
     expiry_date: Mapped[date | None] = mapped_column(Date)
     quantity: Mapped[float | None] = mapped_column(Float)
     unit: Mapped[str | None] = mapped_column(String(20))
-    status: Mapped[str] = mapped_column(String(50), default="in_production")  # in_production/released/on_hold/recalled
+    status: Mapped[BatchStatus] = mapped_column(String(50), default=BatchStatus.IN_PRODUCTION)
+    recall_reason: Mapped[str | None] = mapped_column(Text)
 
     product: Mapped[Product] = relationship(back_populates="batches")
+    lot_usages: Mapped[list["BatchLotUsage"]] = relationship(back_populates="batch", cascade="all, delete-orphan")
+
+
+class RawMaterialLot(Base, UUIDMixin, TimestampMixin):
+    """A specific received lot of a raw material/ingredient — the other
+    half of traceability from `Batch` (the finished-goods side). Linking
+    a Batch to the RawMaterialLots consumed in it (via BatchLotUsage)
+    makes both directions of a recall trace possible: "what's affected if
+    this ingredient lot is bad?" and "what went into this finished
+    batch?"."""
+
+    __tablename__ = "raw_material_lots"
+
+    company_id: Mapped[str] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), index=True)
+    supplier_id: Mapped[str | None] = mapped_column(ForeignKey("suppliers.id", ondelete="SET NULL"))
+    material_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    lot_number: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    received_date: Mapped[date | None] = mapped_column(Date)
+    expiry_date: Mapped[date | None] = mapped_column(Date)
+    quantity_received: Mapped[float | None] = mapped_column(Float)
+    unit: Mapped[str | None] = mapped_column(String(20))
+    status: Mapped[LotStatus] = mapped_column(String(20), default=LotStatus.ACTIVE)
+    notes: Mapped[str | None] = mapped_column(Text)
+
+    company = relationship("Company")
+    supplier = relationship("Supplier")
+    batch_usages: Mapped[list["BatchLotUsage"]] = relationship(back_populates="raw_material_lot", cascade="all, delete-orphan")
+
+
+class BatchLotUsage(Base, UUIDMixin, TimestampMixin):
+    """Join row: this finished-goods Batch consumed this much of this
+    RawMaterialLot. A batch can draw on many lots; a lot can feed many
+    batches — this is the edge that makes recall tracing possible in
+    both directions."""
+
+    __tablename__ = "batch_lot_usages"
+
+    batch_id: Mapped[str] = mapped_column(ForeignKey("batches.id", ondelete="CASCADE"), index=True)
+    raw_material_lot_id: Mapped[str] = mapped_column(ForeignKey("raw_material_lots.id", ondelete="CASCADE"), index=True)
+    quantity_used: Mapped[float | None] = mapped_column(Float)
+    unit: Mapped[str | None] = mapped_column(String(20))
+
+    batch: Mapped[Batch] = relationship(back_populates="lot_usages")
+    raw_material_lot: Mapped[RawMaterialLot] = relationship(back_populates="batch_usages")
 
 
 class ProductFormulation(Base, UUIDMixin, TimestampMixin):

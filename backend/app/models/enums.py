@@ -142,3 +142,24 @@ class EcocashPaymentStatus(StrEnum):
     SUBMITTED = "submitted"  # customer submitted a transaction reference, awaiting admin review
     APPROVED = "approved"
     REJECTED = "rejected"
+
+
+class LotStatus(StrEnum):
+    """Status of a raw material lot, independent of any finished-goods
+    batch it may later be consumed into."""
+
+    ACTIVE = "active"  # received, available for use
+    QUARANTINED = "quarantined"  # held pending QA release (e.g. awaiting COA)
+    CONSUMED = "consumed"  # fully used up in production
+    REJECTED = "rejected"  # failed incoming inspection, not to be used
+
+
+class BatchStatus(StrEnum):
+    """Status of a finished-goods production batch. Matches the string
+    values the `batches` table has used since its original migration —
+    this enum documents them, it doesn't change the column type."""
+
+    IN_PRODUCTION = "in_production"
+    RELEASED = "released"
+    ON_HOLD = "on_hold"
+    RECALLED = "recalled"

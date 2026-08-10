@@ -12,6 +12,7 @@ from app.models.enums import (
     AuditChecklistItemResult,
     AuditStatus,
     AuditType,
+    BatchStatus,
     CAStatus,
     CCPStatus,
     ChecklistStatus,
@@ -20,6 +21,7 @@ from app.models.enums import (
     FormulationStatus,
     GMPCategory,
     HazardType,
+    LotStatus,
     NotificationLevel,
     ProductionLineStatus,
     RiskLevel,
@@ -31,7 +33,15 @@ from app.models.enums import (
 from app.models.gmp import Checklist, ChecklistItem, ChecklistTemplate, ChecklistTemplateItem
 from app.models.haccp import CCP, HaccpPlan, HaccpReview, Hazard, MonitoringRecord
 from app.models.notification import Notification
-from app.models.product import Batch, FormulationItem, Ingredient, Product, ProductFormulation
+from app.models.product import (
+    Batch,
+    BatchLotUsage,
+    FormulationItem,
+    Ingredient,
+    Product,
+    ProductFormulation,
+    RawMaterialLot,
+)
 from app.models.signature import DigitalSignature
 from app.models.supplier import Supplier
 from app.models.system_log import SystemLog
@@ -40,15 +50,16 @@ from app.models.user import User
 
 __all__ = [
     "AIConversation", "AIMessage", "Attachment", "Audit", "AuditAIAnalysis", "AuditChecklistItem",
-    "AuditChecklistItemResult", "AuditFinding", "AuditTemplate", "AuditTemplateItem", "Batch", "CCP",
+    "AuditChecklistItemResult", "AuditFinding", "AuditTemplate", "AuditTemplateItem", "Batch",
+    "BatchLotUsage", "BatchStatus", "CCP",
     "CAStatus", "CCPStatus", "Checklist", "ChecklistItem", "ChecklistStatus", "ChecklistTemplate",
     "ChecklistTemplateItem", "Company", "CorrectiveAction", "Department", "DigitalSignature", "Document",
     "DocumentCategory", "DocumentVersion", "EcocashPayment", "EcocashPaymentStatus", "Employee", "Facility",
     "FormulationItem", "FormulationStatus",
     "GMPCategory",
-    "HaccpPlan", "HaccpReview", "Hazard", "HazardType", "Ingredient", "MonitoringRecord",
+    "HaccpPlan", "HaccpReview", "Hazard", "HazardType", "Ingredient", "LotStatus", "MonitoringRecord",
     "Notification", "NotificationLevel", "Product", "ProductFormulation", "ProductionLine",
-    "ProductionLineStatus", "RiskLevel",
+    "ProductionLineStatus", "RawMaterialLot", "RiskLevel",
     "SignatureMeaning", "Subscription", "SubscriptionPlan", "SubscriptionStatus", "Supplier", "SystemLog",
     "TemperatureLog", "TemperatureUnit", "TemperatureUnitType", "User", "UserRole",
     "AuditStatus", "AuditType",

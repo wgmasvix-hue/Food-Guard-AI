@@ -9,6 +9,8 @@ import {
   Settings,
   ShieldAlert,
   Thermometer,
+  Truck,
+  Waypoints,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,6 +29,8 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/gmp", label: "GMP", icon: ListChecks },
   { href: "/temperature", label: "Temperature Logs", icon: Thermometer },
   { href: "/products", label: "Product Formulation", icon: FlaskConical },
+  { href: "/traceability", label: "Traceability", icon: Waypoints },
+  { href: "/suppliers", label: "Suppliers", icon: Truck },
   { href: "/corrective-actions", label: "Corrective Actions", icon: ClipboardCheck },
   { href: "/audits", label: "Audits", icon: ClipboardCheck },
   { href: "/documents", label: "Documents", icon: FileText },

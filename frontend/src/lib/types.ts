@@ -437,3 +437,73 @@ export interface ProductFormulation {
   total_cost: number;
   allergens: string[];
 }
+
+export interface Supplier {
+  id: string;
+  company_id: string;
+  name: string;
+  contact_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  approval_status: "pending" | "approved" | "rejected" | "suspended";
+  certification?: string | null;
+  certification_expires_on?: string | null;
+  risk_rating?: "low" | "medium" | "high" | null;
+  notes?: string | null;
+  is_active: boolean;
+}
+
+export interface Batch {
+  id: string;
+  product_id: string;
+  facility_id?: string | null;
+  batch_number: string;
+  production_date?: string | null;
+  expiry_date?: string | null;
+  quantity?: number | null;
+  unit?: string | null;
+  status: "in_production" | "released" | "on_hold" | "recalled";
+  recall_reason?: string | null;
+}
+
+export interface RawMaterialLot {
+  id: string;
+  company_id: string;
+  supplier_id?: string | null;
+  material_name: string;
+  lot_number: string;
+  received_date?: string | null;
+  expiry_date?: string | null;
+  quantity_received?: number | null;
+  unit?: string | null;
+  status: "active" | "quarantined" | "consumed" | "rejected";
+  notes?: string | null;
+}
+
+export interface BatchLotUsage {
+  id: string;
+  batch_id: string;
+  raw_material_lot_id: string;
+  quantity_used?: number | null;
+  unit?: string | null;
+  raw_material_lot: RawMaterialLot;
+}
+
+export interface TraceBatchSummary {
+  id: string;
+  product_id: string;
+  batch_number: string;
+  status: string;
+  production_date?: string | null;
+}
+
+export interface LotTraceResult {
+  lot: RawMaterialLot;
+  affected_batches: TraceBatchSummary[];
+}
+
+export interface BatchTraceResult {
+  batch: Batch;
+  lots_used: BatchLotUsage[];
+}
